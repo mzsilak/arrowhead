@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.orchestrator.api;
@@ -22,8 +20,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -60,7 +58,7 @@ public class StoreApi {
    */
   @GET
   @Path("{id}")
-  public Response getStoreEntry(@PathParam("id") int id) {
+  public Response getStoreEntry(@PathParam("id") long id) {
 
     restrictionMap.put("id", id);
     OrchestrationStore entry = dm.get(OrchestrationStore.class, restrictionMap);
@@ -121,8 +119,7 @@ public class StoreApi {
    * @throws BadPayloadException, DataNotFoundException
    */
   @PUT
-  public Response getStoreEntries(OrchestrationStoreQuery query) {
-    query.missingFields(true, new HashSet<>(Collections.singleton("address")));
+  public Response getStoreEntries(@Valid OrchestrationStoreQuery query) {
     List<OrchestrationStore> store;
     if (query.getRequestedService() == null) {
       store = StoreService.getDefaultStoreEntries(query.getRequesterSystem());
@@ -147,13 +144,14 @@ public class StoreApi {
    */
 
   @POST
-  public List<OrchestrationStore> addStoreEntries(List<OrchestrationStore> storeEntries) {
-
+  public List<OrchestrationStore> addStoreEntries(@Valid List<OrchestrationStore> storeEntries) {
     List<OrchestrationStore> store = new ArrayList<>();
     for (OrchestrationStore entry : storeEntries) {
-      entry.missingFields(true, new HashSet<>(Collections.singleton("address")));
+      entry.validateCrossParameterConstraints();
       restrictionMap.clear();
       restrictionMap.put("systemName", entry.getConsumer().getSystemName());
+      restrictionMap.put("address", entry.getConsumer().getAddress());
+      restrictionMap.put("port", entry.getConsumer().getPort());
       ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
       if (consumer == null) {
         consumer = dm.save(entry.getConsumer());
@@ -168,6 +166,8 @@ public class StoreApi {
 
       restrictionMap.clear();
       restrictionMap.put("systemName", entry.getProviderSystem().getSystemName());
+      restrictionMap.put("address", entry.getProviderSystem().getAddress());
+      restrictionMap.put("port", entry.getProviderSystem().getPort());
       ArrowheadSystem providerSystem = dm.get(ArrowheadSystem.class, restrictionMap);
       if (providerSystem == null) {
         providerSystem = dm.save(entry.getProviderSystem());
@@ -175,7 +175,6 @@ public class StoreApi {
 
       ArrowheadCloud providerCloud = null;
       if (entry.getProviderCloud() != null) {
-        entry.getProviderCloud().missingFields(true, null);
         restrictionMap.clear();
         restrictionMap.put("operator", entry.getProviderCloud().getOperator());
         restrictionMap.put("cloudName", entry.getProviderCloud().getCloudName());
@@ -215,7 +214,7 @@ public class StoreApi {
    */
   @GET
   @Path("default/{id}")
-  public Response toggleIsDefault(@PathParam("id") int id) {
+  public Response toggleIsDefault(@PathParam("id") long id) {
 
     restrictionMap.put("id", id);
     OrchestrationStore entry = dm.get(OrchestrationStore.class, restrictionMap);
@@ -242,15 +241,10 @@ public class StoreApi {
    * @throws BadPayloadException, DataNotFoundException
    */
   @PUT
-  @Path("update")
-  public Response updateEntry(OrchestrationStore payload) {
-
-    if (payload.getId() == 0) {
-      log.info("updateEntry throws BadPayloadException.");
-      throw new BadPayloadException("Bad payload: id field is missing from the payload.");
-    }
-
-    restrictionMap.put("id", payload.getId());
+  @Path("update/{id}")
+  public Response updateEntry(@PathParam("id") long id, @Valid OrchestrationStore payload) {
+    payload.validateCrossParameterConstraints();
+    restrictionMap.put("id", id);
     OrchestrationStore storeEntry = dm.get(OrchestrationStore.class, restrictionMap);
     if (storeEntry == null) {
       log.info("updateEntry throws DataNotFoundException.");
@@ -300,11 +294,13 @@ public class StoreApi {
    * no matching entries were in the database to begin with.
    */
   @DELETE
-  @Path("consumername/{systemName}")
-  public Response deleteEntries(@PathParam("systemName") String systemName) {
-
-    restrictionMap.put("systemName", systemName);
+  @Path("consumerId/{systemId}")
+  public Response deleteEntries(@PathParam("systemId") long systemId) {
+    restrictionMap.put("id", systemId);
     ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+    if (consumer == null) {
+      return Response.noContent().build();
+    }
 
     restrictionMap.clear();
     restrictionMap.put("consumer", consumer);

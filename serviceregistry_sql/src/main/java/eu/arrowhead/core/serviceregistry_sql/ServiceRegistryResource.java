@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.serviceregistry_sql;
@@ -13,12 +11,12 @@ import eu.arrowhead.common.DatabaseManager;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.exception.DuplicateEntryException;
 import eu.arrowhead.common.messages.ServiceQueryForm;
 import eu.arrowhead.common.messages.ServiceQueryResult;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -48,10 +46,8 @@ public class ServiceRegistryResource {
 
   @POST
   @Path("register")
-  public Response registerService(ServiceRegistryEntry entry) {
-    entry.missingFields(true, false, new HashSet<>(Arrays.asList("interfaces", "address")));
+  public Response registerService(@Valid ServiceRegistryEntry entry) {
     entry.toDatabase();
-
     restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
     if (service == null) {
@@ -64,27 +60,37 @@ public class ServiceRegistryResource {
 
     restrictionMap.clear();
     restrictionMap.put("systemName", entry.getProvider().getSystemName());
+    restrictionMap.put("address", entry.getProvider().getAddress());
+    restrictionMap.put("port", entry.getProvider().getPort());
     ArrowheadSystem provider = dm.get(ArrowheadSystem.class, restrictionMap);
     if (provider == null) {
       provider = dm.save(entry.getProvider());
     } else {
-      provider.setAddress(entry.getProvider().getAddress());
       provider.setAuthenticationInfo(entry.getProvider().getAuthenticationInfo());
       dm.merge(provider);
     }
     entry.setProvider(provider);
 
-    ServiceRegistryEntry savedEntry = dm.save(entry);
+    restrictionMap.clear();
+    restrictionMap.put("provider", provider);
+    restrictionMap.put("providedService", service);
+    ServiceRegistryEntry savedEntry = dm.get(ServiceRegistryEntry.class, restrictionMap);
+    if (savedEntry == null) {
+      savedEntry = dm.save(entry);
+    } else {
+      throw new DuplicateEntryException(
+          "There is already a Service Registry entry with this provider(" + provider.getSystemName() + ") and " + "providedService(" + service
+              .getServiceDefinition() + ")");
+    }
+
     savedEntry.fromDatabase();
-    log.info("New ServiceRegistryEntry " + entry.toString() + " is saved.");
+    log.info("New " + entry.toString() + " is saved.");
     return Response.status(Status.CREATED).entity(savedEntry).build();
   }
 
   @PUT
   @Path("query")
-  public Response queryRegistry(ServiceQueryForm queryForm) {
-    queryForm.missingFields(true, null);
-
+  public Response queryRegistry(@Valid ServiceQueryForm queryForm) {
     restrictionMap.put("serviceDefinition", queryForm.getService().getServiceDefinition());
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
     if (service == null) {
@@ -99,8 +105,22 @@ public class ServiceRegistryResource {
       entry.fromDatabase();
     }
 
-    //NOTE add version filter too later, if deemed needed
+    if (queryForm.getVersion() != null) {
+      RegistryUtils.filterOnVersion(providedServices, queryForm.getVersion());
+    } else {
+      String minVersionValue = queryForm.getService().getServiceMetadata().get("minVersion");
+      int minVersion = minVersionValue != null ? Integer.valueOf(minVersionValue) : 0;
+
+      String maxVersionValue = queryForm.getService().getServiceMetadata().get("maxVersion");
+      int maxVersion = maxVersionValue != null ? Integer.valueOf(maxVersionValue) : Integer.MAX_VALUE;
+
+      if (minVersion > 0 || maxVersion < Integer.MAX_VALUE) {
+        RegistryUtils.filterOnVersion(providedServices, minVersion, maxVersion);
+      }
+    }
     if (queryForm.isMetadataSearch()) {
+      queryForm.getService().getServiceMetadata().remove("minVersion");
+      queryForm.getService().getServiceMetadata().remove("maxVersion");
       RegistryUtils.filterOnMeta(providedServices, queryForm.getService().getServiceMetadata());
     }
     if (queryForm.isPingProviders()) {
@@ -114,14 +134,14 @@ public class ServiceRegistryResource {
 
   @PUT
   @Path("remove")
-  public Response removeService(ServiceRegistryEntry entry) {
-    entry.missingFields(true, false, null);
-
+  public Response removeService(@Valid ServiceRegistryEntry entry) {
     restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
 
     restrictionMap.clear();
     restrictionMap.put("systemName", entry.getProvider().getSystemName());
+    restrictionMap.put("address", entry.getProvider().getAddress());
+    restrictionMap.put("port", entry.getProvider().getPort());
     ArrowheadSystem provider = dm.get(ArrowheadSystem.class, restrictionMap);
 
     restrictionMap.clear();
@@ -131,10 +151,10 @@ public class ServiceRegistryResource {
     if (retrievedEntry != null) {
       dm.delete(retrievedEntry);
       retrievedEntry.fromDatabase();
-      log.info("ServiceRegistryEntry " + retrievedEntry.toString() + " deleted.");
+      log.info(retrievedEntry.toString() + " deleted.");
       return Response.status(Status.OK).entity(retrievedEntry).build();
     } else {
-      log.info("ServiceRegistryEntry " + entry.toString() + " was not found in the SR to delete.");
+      log.info(entry.toString() + " was not found in the SR to delete.");
       return Response.status(Status.NO_CONTENT).entity(entry).build();
     }
   }

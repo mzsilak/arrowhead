@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.gatekeeper;
@@ -34,6 +32,7 @@ import eu.arrowhead.common.messages.ServiceRequestForm;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -67,12 +66,10 @@ public class GatekeeperInboundResource {
    */
   @PUT
   @Path("gsd_poll")
-  public Response GSDPoll(GSDPoll gsdPoll) {
-    gsdPoll.missingFields(true, null);
-
+  public Response GSDPoll(@Valid GSDPoll gsdPoll) {
     // Polling the Authorization System about the consumer Cloud
     InterCloudAuthRequest authRequest = new InterCloudAuthRequest(gsdPoll.getRequesterCloud(), gsdPoll.getRequestedService());
-    String authUri = UriBuilder.fromPath(GatekeeperMain.AUTH_CONTROL_URI).path("intercloud").toString();
+    String authUri = UriBuilder.fromPath(GatekeeperMain.getAuthControlUri()).path("intercloud").toString();
     Response authResponse = Utility.sendRequest(authUri, "PUT", authRequest);
 
     // If the consumer Cloud is not authorized an error is returned
@@ -97,7 +94,7 @@ public class GatekeeperInboundResource {
       }
 
       log.info("GSDPoll successful, sending back GSDAnswer");
-      GSDAnswer answer = new GSDAnswer(gsdPoll.getRequestedService(), Utility.getOwnCloud());
+      GSDAnswer answer = new GSDAnswer(gsdPoll.getRequestedService(), Utility.getOwnCloud(GatekeeperMain.IS_SECURE));
       return Response.status(Status.OK).entity(answer).build();
     }
   }
@@ -110,12 +107,10 @@ public class GatekeeperInboundResource {
    */
   @PUT
   @Path("icn_proposal")
-  public Response ICNProposal(ICNProposal icnProposal) {
-    icnProposal.missingFields(true, null);
-
+  public Response ICNProposal(@Valid ICNProposal icnProposal) {
     // Polling the Authorization System about the consumer Cloud
     InterCloudAuthRequest authRequest = new InterCloudAuthRequest(icnProposal.getRequesterCloud(), icnProposal.getRequestedService());
-    String authUri = UriBuilder.fromPath(GatekeeperMain.AUTH_CONTROL_URI).path("intercloud").toString();
+    String authUri = UriBuilder.fromPath(GatekeeperMain.getAuthControlUri()).path("intercloud").toString();
     Response authResponse = Utility.sendRequest(authUri, "PUT", authRequest);
 
     // If the consumer Cloud is not authorized an error is returned
@@ -130,20 +125,19 @@ public class GatekeeperInboundResource {
     for (ArrowheadSystem preferredSystem : icnProposal.getPreferredSystems()) {
       preferredProviders.add(new PreferredProvider(preferredSystem, null));
     }
-    ArrowheadSystem consumer = new ArrowheadSystem(icnProposal.getRequesterSystem());
 
     // Changing the requesterSystem for the sake of proper token generation
     if (icnProposal.getNegotiationFlags().get("useGateway")) {
       if (!GatekeeperMain.USE_GATEWAY) {
         throw new ArrowheadException("The remote Gatekeeper is configured to use the Gateway Core System!");
       }
-      icnProposal.getRequesterSystem().setSystemName(GatekeeperMain.GATEWAY_PROVIDER_URI[1]);
+      icnProposal.getRequesterSystem().setSystemName(GatekeeperMain.getGatewayProviderUri()[1]);
     }
     ServiceRequestForm serviceRequestForm = new ServiceRequestForm.Builder(icnProposal.getRequesterSystem())
         .requesterCloud(icnProposal.getRequesterCloud()).requestedService(icnProposal.getRequestedService()).orchestrationFlags(orchestrationFlags)
         .preferredProviders(preferredProviders).build();
 
-    Response response = Utility.sendRequest(GatekeeperMain.ORCHESTRATOR_URI, "POST", serviceRequestForm);
+    Response response = Utility.sendRequest(GatekeeperMain.getOrchestratorUri(), "POST", serviceRequestForm);
     OrchestrationResponse orchResponse = response.readEntity(OrchestrationResponse.class);
     // If the gateway service is not requested, then return the full orchestration response
     if (!icnProposal.getNegotiationFlags().get("useGateway")) {
@@ -154,8 +148,6 @@ public class GatekeeperInboundResource {
 
     // Compiling the gateway request payload
     ArrowheadSystem provider = orchResponse.getResponse().get(0).getProvider();
-    Map<String, String> metadata = orchResponse.getResponse().get(0).getService().getServiceMetadata();
-    boolean isSecure = metadata.containsKey("security") && !metadata.get("security").equals("none");
     int timeout = icnProposal.getTimeout() > GatekeeperMain.TIMEOUT ? GatekeeperMain.TIMEOUT : icnProposal.getTimeout();
 
     // Getting the list of preferred brokers from database
@@ -164,45 +156,33 @@ public class GatekeeperInboundResource {
     // Filtering common brokers
     List<Broker> commonBrokers = new ArrayList<>(icnProposal.getPreferredBrokers());
     commonBrokers.retainAll(preferredBrokers);
-    List<Broker> secureCommonBrokers = new ArrayList<>();
-    List<Broker> insecureCommonBrokers = new ArrayList<>();
-
-    for (Broker broker : commonBrokers) {
-      if (broker.isSecure()) {
-        secureCommonBrokers.add(broker);
-      } else {
-        insecureCommonBrokers.add(broker);
-      }
-    }
-
-    Broker chosenBroker;
-    if (isSecure && secureCommonBrokers.size() > 0) {
-      chosenBroker = secureCommonBrokers.get(0);
-    } else if (insecureCommonBrokers.size() > 0) {
-      chosenBroker = insecureCommonBrokers.get(0);
-    } else {
-      String security = isSecure ? "secure" : "insecure";
+    if (commonBrokers.size() == 0) {
+      String security = GatekeeperMain.IS_SECURE ? "secure" : "insecure";
       throw new ArrowheadException("Could not find a common " + security + " broker, data path creation failed.");
+    } else {
+      //implement custom choosing algorithm here
+      Broker chosenBroker = commonBrokers.get(0);
+      log.debug("Common broker was chosen: " + chosenBroker.getAddress() + ":" + chosenBroker.getPort());
+
+      ArrowheadSystem consumer = new ArrowheadSystem(icnProposal.getRequesterSystem());
+      ConnectToProviderRequest connectionRequest = new ConnectToProviderRequest(chosenBroker.getAddress(), chosenBroker.getPort(), consumer, provider,
+                                                                                icnProposal.getRequesterCloud(),
+                                                                                Utility.getOwnCloud(GatekeeperMain.IS_SECURE),
+                                                                                icnProposal.getRequestedService(), GatekeeperMain.IS_SECURE, timeout,
+                                                                                icnProposal.getGatewayPublicKey());
+
+      // Sending request, parsing response
+      Response gatewayResponse = Utility.sendRequest(GatekeeperMain.getGatewayProviderUri()[0], "PUT", connectionRequest);
+      ConnectToProviderResponse connectToProviderResponse = gatewayResponse.readEntity(ConnectToProviderResponse.class);
+
+      GatewayConnectionInfo gatewayConnectionInfo = new GatewayConnectionInfo(chosenBroker.getAddress(), chosenBroker.getPort(),
+                                                                              connectToProviderResponse.getQueueName(),
+                                                                              connectToProviderResponse.getControlQueueName(),
+                                                                              GatekeeperMain.getGatewayProviderUri()[3]);
+      // The AMQP broker can only create 1 channel at the moment, so the gatekeeper have to choose an orchestration form
+      ICNEnd icnEnd = new ICNEnd(orchResponse.getResponse().get(0), gatewayConnectionInfo);
+      log.info("ICNProposal: returning the first OrchestrationForm and the GatewayConnectionInfo to the requester Cloud.");
+      return Response.status(response.getStatus()).entity(icnEnd).build();
     }
-    log.debug("Common broker was chosen: " + chosenBroker.getBrokerName() + "@" + chosenBroker.getAddress());
-
-    ConnectToProviderRequest connectionRequest = new ConnectToProviderRequest(chosenBroker.getAddress(), chosenBroker.getPort(), consumer, provider,
-                                                                              icnProposal.getRequesterCloud(), Utility.getOwnCloud(),
-                                                                              icnProposal.getRequestedService(), isSecure, timeout,
-                                                                              icnProposal.getGatewayPublicKey());
-
-    // Sending request, parsing response
-    Response gatewayResponse = Utility.sendRequest(GatekeeperMain.GATEWAY_PROVIDER_URI[0], "PUT", connectionRequest);
-    ConnectToProviderResponse connectToProviderResponse = gatewayResponse.readEntity(ConnectToProviderResponse.class);
-
-    GatewayConnectionInfo gatewayConnectionInfo = new GatewayConnectionInfo(chosenBroker.getAddress(), chosenBroker.getPort(),
-                                                                            connectToProviderResponse.getQueueName(),
-                                                                            connectToProviderResponse.getControlQueueName(),
-                                                                            GatekeeperMain.GATEWAY_PROVIDER_URI[3]);
-    // The AMQP broker can only create 1 channel at the moment, so the gatekeeper have to choose an orchestration form
-    ICNEnd icnEnd = new ICNEnd(orchResponse.getResponse().get(0), gatewayConnectionInfo);
-    log.info("ICNProposal: returning the first OrchestrationForm and the GatewayConnectionInfo to the requester Cloud.");
-    return Response.status(response.getStatus()).entity(icnEnd).build();
   }
-
 }

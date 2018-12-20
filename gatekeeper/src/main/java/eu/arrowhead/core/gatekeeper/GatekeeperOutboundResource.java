@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.gatekeeper;
@@ -29,11 +27,11 @@ import eu.arrowhead.common.messages.ICNResult;
 import eu.arrowhead.common.messages.OrchestrationForm;
 import eu.arrowhead.common.messages.OrchestrationResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -70,15 +68,14 @@ public class GatekeeperOutboundResource {
    */
   @PUT
   @Path("init_gsd")
-  public Response GSDRequest(GSDRequestForm requestForm) {
-    requestForm.missingFields(true, null);
-    ArrowheadCloud ownCloud = Utility.getOwnCloud();
+  public Response GSDRequest(@Valid GSDRequestForm requestForm) {
+    ArrowheadCloud ownCloud = Utility.getOwnCloud(GatekeeperMain.IS_SECURE);
     GSDPoll gsdPoll = new GSDPoll(requestForm.getRequestedService(), ownCloud, requestForm.getRegistryFlags());
 
     // If no preferred Clouds were given, send GSD poll requests to the neighbor Clouds
     List<String> cloudURIs = new ArrayList<>();
     if (requestForm.getSearchPerimeter().isEmpty()) {
-      cloudURIs = Utility.getNeighborCloudURIs();
+      cloudURIs = Utility.getNeighborCloudURIs(GatekeeperMain.IS_SECURE);
     }
     // If there are preferred Clouds given, send GSD poll requests there
     else {
@@ -123,20 +120,15 @@ public class GatekeeperOutboundResource {
         i++;
       }
 
-      //Response validation
-      Set<String> mandatoryFields = new HashSet<>(Arrays.asList("address", "port", "gatekeeperServiceURI"));
-      if (GatekeeperMain.IS_SECURE) {
-        mandatoryFields.add("authenticationInfo");
+      try {
+        GSDAnswer answer = response.readEntity(GSDAnswer.class);
+        if (Utility.isBeanValid(answer)) {
+          gsdAnswerList.add(answer);
+        }
+      } catch (ConstraintViolationException e) {
+        e.printStackTrace();
+        log.info("GSDAnswer from " + uri + " is not valid! Skipping it from GSDResult!");
       }
-      GSDAnswer answer = response.readEntity(GSDAnswer.class);
-      mandatoryFields = answer.missingFields(false, mandatoryFields);
-
-      if (!mandatoryFields.isEmpty()) {
-        log.info("GSDAnswer from " + uri + " missing fields:" + String.join(", ", mandatoryFields) + " (skipping it from GSDResult)");
-        continue;
-      }
-      //All is good, add the answer to the result list
-      gsdAnswerList.add(answer);
     }
 
     // Sending back the results. The orchestrator will validate the results (result list might be empty) and decide how to proceed.
@@ -153,17 +145,18 @@ public class GatekeeperOutboundResource {
    */
   @PUT
   @Path("init_icn")
-  public Response ICNRequest(ICNRequestForm requestForm) {
-    requestForm.missingFields(true, new HashSet<>(Arrays.asList("ArrowheadCloud:address", "ArrowheadCloud:port", "gatekeeperServiceURI")));
+  public Response ICNRequest(@Valid ICNRequestForm requestForm) {
     requestForm.getNegotiationFlags().put("useGateway", GatekeeperMain.USE_GATEWAY);
     // Compiling the payload and then getting the request URI
-    ICNProposal icnProposal = new ICNProposal(requestForm.getRequestedService(), Utility.getOwnCloud(), requestForm.getRequesterSystem(),
-                                              requestForm.getPreferredSystems(), requestForm.getNegotiationFlags(), null, GatekeeperMain.TIMEOUT,
-                                              null);
+    ICNProposal icnProposal = new ICNProposal(requestForm.getRequestedService(), Utility.getOwnCloud(GatekeeperMain.IS_SECURE),
+                                              requestForm.getRequesterSystem(), requestForm.getPreferredSystems(), requestForm.getNegotiationFlags(),
+                                              null, GatekeeperMain.TIMEOUT, null);
 
     if (GatekeeperMain.USE_GATEWAY) {
-      icnProposal.setPreferredBrokers(dm.getAll(Broker.class, null));
-      icnProposal.setGatewayPublicKey(GatekeeperMain.GATEWAY_CONSUMER_URI[3]);
+      Map<String, Object> restrictionMap = new HashMap<>();
+      restrictionMap.put("secure", GatekeeperMain.IS_SECURE);
+      icnProposal.setPreferredBrokers(dm.getAll(Broker.class, restrictionMap));
+      icnProposal.setGatewayPublicKey(GatekeeperMain.getGatewayConsumerUri()[3]);
     }
 
     String icnUri = Utility.getUri(requestForm.getTargetCloud().getAddress(), requestForm.getTargetCloud().getPort(),
@@ -188,20 +181,21 @@ public class GatekeeperOutboundResource {
     ConnectToConsumerRequest connectionRequest = new ConnectToConsumerRequest(gwConnInfo.getBrokerName(), gwConnInfo.getBrokerPort(),
                                                                               gwConnInfo.getQueueName(), gwConnInfo.getControlQueueName(),
                                                                               requestForm.getRequesterSystem(),
-                                                                              icnEnd.getOrchestrationForm().getProvider(), Utility.getOwnCloud(),
+                                                                              icnEnd.getOrchestrationForm().getProvider(),
+                                                                              Utility.getOwnCloud(GatekeeperMain.IS_SECURE),
                                                                               requestForm.getTargetCloud(), requestForm.getRequestedService(),
                                                                               isSecure, GatekeeperMain.TIMEOUT, gwConnInfo.getGatewayPublicKey());
 
     // Sending the gateway request and parsing the response
     Response gatewayResponse = Utility
-        .sendRequest(GatekeeperMain.GATEWAY_CONSUMER_URI[0], "PUT", connectionRequest, GatekeeperMain.outboundServerContext);
+        .sendRequest(GatekeeperMain.getGatewayConsumerUri()[0], "PUT", connectionRequest, GatekeeperMain.outboundServerContext);
     ConnectToConsumerResponse connectToConsumerResponse = gatewayResponse.readEntity(ConnectToConsumerResponse.class);
 
     ArrowheadSystem gatewaySystem = new ArrowheadSystem();
-    gatewaySystem.setSystemName(GatekeeperMain.GATEWAY_CONSUMER_URI[1]);
-    gatewaySystem.setAddress(GatekeeperMain.GATEWAY_CONSUMER_URI[2]);
+    gatewaySystem.setSystemName(GatekeeperMain.getGatewayConsumerUri()[1]);
+    gatewaySystem.setAddress(GatekeeperMain.getGatewayConsumerUri()[2]);
     gatewaySystem.setPort(connectToConsumerResponse.getServerSocketPort());
-    gatewaySystem.setAuthenticationInfo(GatekeeperMain.GATEWAY_CONSUMER_URI[3]);
+    gatewaySystem.setAuthenticationInfo(GatekeeperMain.getGatewayConsumerUri()[3]);
     icnEnd.getOrchestrationForm().setProvider(gatewaySystem);
     List<OrchestrationForm> orchResponse = new ArrayList<>();
     orchResponse.add(icnEnd.getOrchestrationForm());

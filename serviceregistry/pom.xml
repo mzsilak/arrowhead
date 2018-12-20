@@ -1,10 +1,8 @@
 <!--
-  ~  Copyright (c) 2018 AITIA International Inc.
-  ~
-  ~  This work is part of the Productive 4.0 innovation project, which receives grants from the
-  ~  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
-  ~  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
-  ~  national funding authorities from involved countries.
+  ~ This work is part of the Productive 4.0 innovation project, which receives grants from the
+  ~ European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+  ~ (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+  ~ national funding authorities from involved countries.
   -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -14,18 +12,18 @@
 
   <parent>
     <groupId>eu.arrowhead</groupId>
-    <artifactId>arrowhead</artifactId>
-    <version>4.0</version>
+    <artifactId>core</artifactId>
+    <version>${revision}</version>
   </parent>
 
-  <artifactId>serviceregistry</artifactId>
+  <artifactId>arrowhead-serviceregistry</artifactId>
   <packaging>jar</packaging>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.version>3.1</maven.compiler.version>
-    <maven.dependency.version>2.5.1</maven.dependency.version>
+    <maven.compiler.version>3.8.0</maven.compiler.version>
+    <maven.dependency.version>2.10</maven.dependency.version>
     <maven.jar.version>3.0.2</maven.jar.version>
     <maven.resources.version>2.7</maven.resources.version>
   </properties>
@@ -34,12 +32,12 @@
 
     <dependency>
       <groupId>eu.arrowhead</groupId>
-      <artifactId>common</artifactId>
+      <artifactId>arrowhead-common</artifactId>
     </dependency>
 
     <dependency>
       <groupId>eu.arrowhead</groupId>
-      <artifactId>dnssd</artifactId>
+      <artifactId>arrowhead-dnssd</artifactId>
     </dependency>
 
   </dependencies>

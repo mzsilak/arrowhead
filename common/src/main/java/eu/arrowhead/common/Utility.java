@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.common;
@@ -37,15 +35,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
@@ -74,6 +86,10 @@ public final class Utility {
     return true;
   };
 
+  private static final String DEFAULT_CONF = "default.conf";
+  private static final String DEFAULT_CONF_DIR = "config" + File.separator + "default.conf";
+  private static final String APP_CONF = "app.conf";
+  private static final String APP_CONF_DIR = "config" + File.separator + "app.conf";
 
   private Utility() throws AssertionError {
     throw new AssertionError("Arrowhead Common:Utility is a non-instantiable class");
@@ -112,7 +128,9 @@ public final class Utility {
     boolean isSecure = false;
     if (uri == null) {
       log.error("sendRequest received null uri");
-      throw new NullPointerException("send (HTTP) request method received null URL");
+      throw new NullPointerException(
+          "send (HTTP) request method received null URL. This most likely means the invoking Core System could not fetch the service"
+              + " of another Core System from the Service Registry!");
     }
     if (uri.startsWith("https")) {
       isSecure = true;
@@ -145,8 +163,14 @@ public final class Utility {
           throw new NotAllowedException("Invalid method type was given to the Utility.sendRequest() method");
       }
     } catch (ProcessingException e) {
-      log.error("UnavailableServerException occurred at " + uri, e);
-      throw new UnavailableServerException("Could not get any response from: " + uri, Status.SERVICE_UNAVAILABLE.getStatusCode(), e);
+      if (e.getCause().getMessage().contains("PKIX path")) {
+        log.error("The system at " + uri + " is not part of the same certificate chain of trust!");
+        throw new AuthException("The system at " + uri + " is not part of the same certificate chain of trust!", Status.UNAUTHORIZED.getStatusCode(),
+                                e);
+      } else {
+        log.error("UnavailableServerException occurred at " + uri, e);
+        throw new UnavailableServerException("Could not get any response from: " + uri, Status.SERVICE_UNAVAILABLE.getStatusCode(), e);
+      }
     }
 
     // If the response status code does not start with 2 the request was not successful
@@ -160,6 +184,8 @@ public final class Utility {
   public static <T> Response sendRequest(String uri, String method, T payload) {
     return sendRequest(uri, method, payload, null);
   }
+
+  //TODO option for async request sending which can be used by the event handler
 
   private static void handleException(Response response, String uri) {
     //The response body has to be extracted before the stream closes
@@ -205,7 +231,7 @@ public final class Utility {
           throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
         case DATA_NOT_FOUND:
           throw new DataNotFoundException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
-        case DNSSD:
+        case DNS_SD:
           throw new DnsException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
         case DUPLICATE_ENTRY:
           throw new DuplicateEntryException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
@@ -219,7 +245,7 @@ public final class Utility {
     }
   }
 
-  public static String getUri(String address, int port, String serviceUri, boolean isSecure, boolean serverStart) {
+  public static String getUri(String address, int port, String serviceURI, boolean isSecure, boolean serverStart) {
     if (address == null) {
       log.error("Address can not be null (Utility:getUri throws NPE)");
       throw new NullPointerException("Address can not be null (Utility:getUri throws NPE)");
@@ -234,8 +260,8 @@ public final class Utility {
     if (port > 0) {
       ub.port(port);
     }
-    if (serviceUri != null) {
-      ub.path(serviceUri);
+    if (serviceURI != null) {
+      ub.path(serviceURI);
     }
 
     String url = ub.toString();
@@ -254,9 +280,9 @@ public final class Utility {
     return url;
   }
 
-  public static String[] getServiceInfo(String serviceId) {
-    ArrowheadService service = sslContext == null ? new ArrowheadService(createSD(serviceId, false), Collections.singletonList("JSON"), null)
-                                                  : new ArrowheadService(createSD(serviceId, true), Collections.singletonList("JSON"),
+  public static Optional<String[]> getServiceInfo(String serviceId) {
+    ArrowheadService service = sslContext == null ? new ArrowheadService(createSD(serviceId, false), Collections.singleton("JSON"), null)
+                                                  : new ArrowheadService(createSD(serviceId, true), Collections.singleton("JSON"),
                                                                          ArrowheadMain.secureServerMetadata);
     ServiceQueryForm sqf = new ServiceQueryForm(service, true, false);
     Response response = sendRequest(SR_QUERY_URI, "PUT", sqf);
@@ -267,46 +293,59 @@ public final class Utility {
       boolean isSecure = false;
       if (!entry.getProvidedService().getServiceMetadata().isEmpty()) {
         isSecure = entry.getProvidedService().getServiceMetadata().containsKey("security");
-      } else if (entry.getMetadata() != null) {
-        isSecure = entry.getMetadata().contains("security");
       }
-      String serviceUri = getUri(coreSystem.getAddress(), coreSystem.getPort(), entry.getServiceURI(), isSecure, false);
+      String serviceURI = getUri(coreSystem.getAddress(), coreSystem.getPort(), entry.getServiceURI(), isSecure, false);
       if (serviceId.equals(CoreSystemService.GW_CONSUMER_SERVICE.getServiceDef()) || serviceId
           .equals(CoreSystemService.GW_PROVIDER_SERVICE.getServiceDef())) {
-        return new String[]{serviceUri, coreSystem.getSystemName(), coreSystem.getAddress(), coreSystem.getAuthenticationInfo()};
+        return Optional.of(new String[]{serviceURI, coreSystem.getSystemName(), coreSystem.getAddress(), coreSystem.getAuthenticationInfo()});
       }
-      return new String[]{serviceUri};
-    } else {
-      log.fatal("getServiceInfo: SR query came back empty for: " + serviceId);
-      throw new ServiceConfigurationError(serviceId + " (service) not found in the Service Registry!");
+      return Optional.of(new String[]{serviceURI});
     }
+    return Optional.empty();
   }
 
-  public static List<String> getNeighborCloudURIs() {
+  public static List<String> getNeighborCloudURIs(boolean isSecure) {
     List<NeighborCloud> cloudList = new ArrayList<>(DatabaseManager.getInstance().getAll(NeighborCloud.class, null));
 
     List<String> uriList = new ArrayList<>();
     for (NeighborCloud cloud : cloudList) {
-      uriList.add(
-          getUri(cloud.getCloud().getAddress(), cloud.getCloud().getPort(), cloud.getCloud().getGatekeeperServiceURI(), cloud.getCloud().isSecure(),
-                 false));
+      if (isSecure == cloud.getCloud().isSecure()) {
+        uriList.add(
+            getUri(cloud.getCloud().getAddress(), cloud.getCloud().getPort(), cloud.getCloud().getGatekeeperServiceURI(), cloud.getCloud().isSecure(),
+                   false));
+      }
     }
 
     return uriList;
   }
 
-  public static ArrowheadCloud getOwnCloud() {
+  public static ArrowheadCloud getOwnCloud(boolean isSecure) {
     List<OwnCloud> cloudList = DatabaseManager.getInstance().getAll(OwnCloud.class, null);
     if (cloudList.isEmpty()) {
       log.error("Utility:getOwnCloud not found in the database.");
       throw new DataNotFoundException("Own Cloud information not found in the database. This information is needed for the Gatekeeper System.",
                                       Status.NOT_FOUND.getStatusCode());
     }
-    if (cloudList.size() > 1) {
-      log.warn("own_cloud table should NOT have more than 1 rows.");
+    if (cloudList.size() > 2) {
+      log.warn("own_cloud table should NOT have more than 2 rows.");
     }
-
-    return cloudList.get(0).getCloud();
+    if (isSecure) {
+      for (OwnCloud cloud : cloudList) {
+        if (cloud.getCloud().isSecure()) {
+          return cloud.getCloud();
+        }
+      }
+      log.error("Utility:getOwnCloud finds no secure own cloud!");
+      throw new DataNotFoundException("Could not find secure own cloud information in the database!", Status.NOT_FOUND.getStatusCode());
+    } else {
+      for (OwnCloud cloud : cloudList) {
+        if (!cloud.getCloud().isSecure()) {
+          return cloud.getCloud();
+        }
+      }
+      log.error("Utility:getOwnCloud finds no insecure own cloud!");
+      throw new DataNotFoundException("Could not find insecure own cloud information in the database!", Status.NOT_FOUND.getStatusCode());
+    }
   }
 
   public static String stripEndSlash(String uri) {
@@ -319,7 +358,7 @@ public final class Utility {
   public static String getRequestPayload(InputStream is) {
     StringBuilder sb = new StringBuilder();
     String line;
-    try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
       while ((line = br.readLine()) != null) {
         sb.append(line);
       }
@@ -380,7 +419,12 @@ public final class Utility {
   public static TypeSafeProperties getProp(String fileName) {
     TypeSafeProperties prop = new TypeSafeProperties();
     try {
-      File file = new File("config" + File.separator + fileName);
+      File file;
+      if (new File(fileName).exists()) {
+        file = new File(fileName);
+      } else {
+        file = new File("config" + File.separator + fileName);
+      }
       FileInputStream inputStream = new FileInputStream(file);
       prop.load(inputStream);
     } catch (FileNotFoundException ex) {
@@ -392,6 +436,54 @@ public final class Utility {
     return prop;
   }
 
+  public static TypeSafeProperties getProp() {
+    TypeSafeProperties prop = new TypeSafeProperties();
+
+    try {
+      if (Files.isReadable(Paths.get(DEFAULT_CONF))) {
+        prop.load(new FileInputStream(DEFAULT_CONF));
+      } else if (Files.isReadable(Paths.get(DEFAULT_CONF_DIR))) {
+        prop.load(new FileInputStream(DEFAULT_CONF_DIR));
+      } else {
+        throw new ServiceConfigurationError("default.conf file not found in the working directory! (" + System.getProperty("user.dir") + ")");
+      }
+
+      if (Files.isReadable(Paths.get(APP_CONF))) {
+        prop.load(new FileInputStream(APP_CONF));
+      } else if (Files.isReadable(Paths.get(APP_CONF_DIR))) {
+        prop.load(new FileInputStream(APP_CONF_DIR));
+      }
+    } catch (IOException e) {
+      throw new AssertionError("File loading failed...", e);
+    }
+
+    //If MySQL based JDBC URLs are used, we append the system default time zone to the URL
+    //This is for a bug fix with certain MySQL JDBC driver versions: https://github.com/arrowhead-f/core-java/issues/30
+    String timeZoneQueryParam = "serverTimezone=" + ZoneId.systemDefault().getId();
+
+    String dbAddress = prop.getProperty("db_address");
+    if (dbAddress != null && dbAddress.contains("mysql")) {
+      if (dbAddress.contains("?")) {
+        dbAddress = dbAddress + "&" + timeZoneQueryParam;
+      } else {
+        dbAddress = dbAddress + "?" + timeZoneQueryParam;
+      }
+      prop.setProperty("db_address", dbAddress);
+    }
+
+    String logAddress = prop.getProperty("log4j.appender.DB.URL");
+    if (logAddress != null && logAddress.contains("mysql")) {
+      if (logAddress.contains("?")) {
+        logAddress = logAddress + "&" + timeZoneQueryParam;
+      } else {
+        logAddress = logAddress + "?" + timeZoneQueryParam;
+      }
+      prop.setProperty("log4j.appender.DB.URL", logAddress);
+    }
+
+    return prop;
+  }
+
   public static void checkProperties(Set<String> propertyNames, List<String> mandatoryProperties) {
     if (mandatoryProperties == null || mandatoryProperties.isEmpty()) {
       return;
@@ -400,8 +492,43 @@ public final class Utility {
     List<String> properties = new ArrayList<>(mandatoryProperties);
     if (!propertyNames.containsAll(mandatoryProperties)) {
       properties.removeIf(propertyNames::contains);
-      throw new ServiceConfigurationError("Missing field(s) from app.properties file: " + properties.toString());
+      throw new ServiceConfigurationError("Missing field(s) from config file: " + properties.toString());
     }
   }
 
+  /* If needed, this method can be used to get the IPv4 address of the host machine. Public point-to-point IP addresses are prioritized over private
+    (site local) IP addresses */
+  @SuppressWarnings("unused")
+  public static String getIpAddress() throws SocketException {
+    List<InetAddress> addresses = new ArrayList<>();
+
+    Enumeration e = NetworkInterface.getNetworkInterfaces();
+    while (e.hasMoreElements()) {
+      NetworkInterface inf = (NetworkInterface) e.nextElement();
+      Enumeration ee = inf.getInetAddresses();
+      while (ee.hasMoreElements()) {
+        addresses.add((InetAddress) ee.nextElement());
+      }
+    }
+
+    addresses = addresses.stream().filter(current -> !current.getHostAddress().contains(":")).filter(current -> !current.isLoopbackAddress())
+                         .filter(current -> !current.isMulticastAddress()).filter(current -> !current.isLinkLocalAddress())
+                         .collect(Collectors.toList());
+    if (addresses.isEmpty()) {
+      throw new SocketException("No valid addresses left after filtering");
+    }
+    for (InetAddress address : addresses) {
+      if (!address.isSiteLocalAddress()) {
+        return address.getHostAddress();
+      }
+    }
+    return addresses.get(0).getHostAddress();
+  }
+
+  public static <T> boolean isBeanValid(T bean) {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    Validator validator = factory.getValidator();
+    Set<ConstraintViolation<T>> violations = validator.validate(bean);
+    return violations.isEmpty();
+  }
 }

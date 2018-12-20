@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.orchestrator.api;
@@ -49,14 +47,21 @@ public class StoreResource {
   @Path("consumername/{systemName}")
   public List<OrchestrationStore> getDefaultEntriesForConsumer(@PathParam("systemName") String systemName) {
     restrictionMap.put("systemName", systemName);
-    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+    List<ArrowheadSystem> consumers = dm.getAll(ArrowheadSystem.class, restrictionMap);
+    ArrowheadSystem consumer;
+    if (!consumers.isEmpty()) {
+      consumer = consumers.get(0);
+    } else {
+      log.info("getDefaultEntriesForConsumer throws DataNotFoundException.");
+      throw new DataNotFoundException("Default Orchestration Store entries were not found for consumer: " + systemName);
+    }
 
     restrictionMap.clear();
     restrictionMap.put("consumer", consumer);
     restrictionMap.put("defaultEntry", true);
     List<OrchestrationStore> store = dm.getAll(OrchestrationStore.class, restrictionMap);
     if (store.isEmpty()) {
-      log.info("getDefaultEntriesForConsumer throws DataNotFoundException.");
+      log.info("getDefaultEntriesForConsumer throws DataNotFoundException2.");
       throw new DataNotFoundException("Default Orchestration Store entries were not found for consumer: " + systemName);
     }
 
@@ -69,7 +74,14 @@ public class StoreResource {
   @Path("consumername/{systemName}/servicedef/{serviceDef}")
   public List<OrchestrationStore> getStoreEntries(@PathParam("systemName") String systemName, @PathParam("serviceDef") String serviceDef) {
     restrictionMap.put("systemName", systemName);
-    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+    List<ArrowheadSystem> consumers = dm.getAll(ArrowheadSystem.class, restrictionMap);
+    ArrowheadSystem consumer;
+    if (!consumers.isEmpty()) {
+      consumer = consumers.get(0);
+    } else {
+      log.info("getStoreEntries throws DataNotFoundException.");
+      throw new DataNotFoundException(" Orchestration Store entries were not found for consumer: " + systemName);
+    }
 
     restrictionMap.clear();
     restrictionMap.put("serviceDefinition", serviceDef);
@@ -80,7 +92,7 @@ public class StoreResource {
     restrictionMap.put("service", service);
     List<OrchestrationStore> store = dm.getAll(OrchestrationStore.class, restrictionMap);
     if (store.isEmpty()) {
-      log.info("getStoreEntries throws DataNotFoundException.");
+      log.info("getStoreEntries throws DataNotFoundException2.");
       throw new DataNotFoundException("Orchestration Store entries were not found for this consumer/service pair.");
     }
 
@@ -101,13 +113,20 @@ public class StoreResource {
     String[] clientFields = clientCN.split("\\.", 2);
 
     restrictionMap.put("systemName", clientFields[0]);
-    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+    List<ArrowheadSystem> consumers = dm.getAll(ArrowheadSystem.class, restrictionMap);
+    ArrowheadSystem consumer;
+    if (!consumers.isEmpty()) {
+      consumer = consumers.get(0);
+    } else {
+      log.info("getEntriesForSecureConsumer throws DataNotFoundException.");
+      throw new DataNotFoundException(" Orchestration Store entries were not found for consumer: " + clientFields[0]);
+    }
 
     restrictionMap.clear();
     restrictionMap.put("consumer", consumer);
     List<OrchestrationStore> store = dm.getAll(OrchestrationStore.class, restrictionMap);
     if (store.isEmpty()) {
-      log.info("getEntriesForSecureConsumer throws DataNotFoundException.");
+      log.info("getEntriesForSecureConsumer throws DataNotFoundException2.");
       throw new DataNotFoundException("Orchestration Store entries were not found for consumer: " + clientFields[0]);
     }
 
@@ -118,8 +137,8 @@ public class StoreResource {
 
   @GET
   @Path("query/servicedef/{serviceDef}")
-  public List<OrchestrationStore> getEntriesForSecureConsumer(@PathParam("serviceDef") String serviceDef, @Context ContainerRequestContext
-      requestContext) {
+  public List<OrchestrationStore> getEntriesForSecureConsumer(@PathParam("serviceDef") String serviceDef,
+                                                              @Context ContainerRequestContext requestContext) {
     if (!requestContext.getSecurityContext().isSecure()) {
       log.error("getEntriesForSecureConsumer called in insecure mode");
       throw new ArrowheadException("This endpoint can only be called in secure mode!", Status.UNAUTHORIZED.getStatusCode());
@@ -129,7 +148,14 @@ public class StoreResource {
     String[] clientFields = clientCN.split("\\.", 2);
 
     restrictionMap.put("systemName", clientFields[0]);
-    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+    List<ArrowheadSystem> consumers = dm.getAll(ArrowheadSystem.class, restrictionMap);
+    ArrowheadSystem consumer;
+    if (!consumers.isEmpty()) {
+      consumer = consumers.get(0);
+    } else {
+      log.info("getEntriesForSecureConsumer throws DataNotFoundException.");
+      throw new DataNotFoundException(" Orchestration Store entries were not found for consumer: " + clientFields[0]);
+    }
 
     restrictionMap.clear();
     restrictionMap.put("serviceDefinition", serviceDef);
@@ -140,7 +166,7 @@ public class StoreResource {
     restrictionMap.put("service", service);
     List<OrchestrationStore> store = dm.getAll(OrchestrationStore.class, restrictionMap);
     if (store.isEmpty()) {
-      log.info("getEntriesForSecureConsumer throws DataNotFoundException.");
+      log.info("getEntriesForSecureConsumer throws DataNotFoundException2.");
       throw new DataNotFoundException("Orchestration Store entries were not found for this consumer/service pair");
     }
 
@@ -148,6 +174,4 @@ public class StoreResource {
     log.info("getEntriesForSecureConsumer returns with non-empty list");
     return store;
   }
-
-
 }

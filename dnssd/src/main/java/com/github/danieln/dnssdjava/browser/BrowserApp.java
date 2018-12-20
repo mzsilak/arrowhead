@@ -1,11 +1,9 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * Copyright (c) 2011, Daniel Nilsson
+ * Released under a simplified BSD license,
+ * see README.txt for details.
  */
+
 package com.github.danieln.dnssdjava.browser;
 
 import com.github.danieln.dnssdjava.DnsSDBrowser;
@@ -115,33 +113,33 @@ class BrowserApp extends JFrame {
     layout.setAutoCreateContainerGaps(true);
     layout.setHorizontalGroup(layout.createSequentialGroup().addGroup(
         layout.createParallelGroup().addComponent(computerDomainLabel).addComponent(computerDomainCombo).addComponent(browsingDomainLabel)
-            .addComponent(browsingDomainCombo).addComponent(serviceTypeLabel).addComponent(serviceTypeScroll).addComponent(subtypeLabel)
-            .addComponent(subtypeField)).addPreferredGap(ComponentPlacement.UNRELATED)
-                                  .addGroup(layout.createParallelGroup().addComponent(serviceInstanceLabel).addComponent(serviceInstanceScroll))
-                                  .addPreferredGap(ComponentPlacement.UNRELATED).addGroup(
+              .addComponent(browsingDomainCombo).addComponent(serviceTypeLabel).addComponent(serviceTypeScroll).addComponent(subtypeLabel)
+              .addComponent(subtypeField)).addPreferredGap(ComponentPlacement.UNRELATED)
+                                    .addGroup(layout.createParallelGroup().addComponent(serviceInstanceLabel).addComponent(serviceInstanceScroll))
+                                    .addPreferredGap(ComponentPlacement.UNRELATED).addGroup(
             layout.createParallelGroup().addComponent(nameLabel).addComponent(nameField).addGroup(
                 layout.createSequentialGroup().addGroup(layout.createParallelGroup().addComponent(hostLabel).addComponent(hostField))
-                    .addPreferredGap(ComponentPlacement.RELATED)
-                    .addGroup(layout.createParallelGroup().addComponent(portLabel).addComponent(portField))).addComponent(propertiesLabel)
-                .addComponent(propertiesScroll)));
+                      .addPreferredGap(ComponentPlacement.RELATED)
+                      .addGroup(layout.createParallelGroup().addComponent(portLabel).addComponent(portField))).addComponent(propertiesLabel)
+                  .addComponent(propertiesScroll)));
     layout.setVerticalGroup(layout.createParallelGroup().addGroup(
         layout.createSequentialGroup().addComponent(computerDomainLabel).addPreferredGap(ComponentPlacement.RELATED)
-            .addComponent(computerDomainCombo, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-            .addPreferredGap(ComponentPlacement.UNRELATED).addComponent(browsingDomainLabel).addPreferredGap(ComponentPlacement.RELATED)
-            .addComponent(browsingDomainCombo, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-            .addPreferredGap(ComponentPlacement.UNRELATED).addComponent(serviceTypeLabel).addPreferredGap(ComponentPlacement.RELATED)
-            .addComponent(serviceTypeScroll).addPreferredGap(ComponentPlacement.UNRELATED).addComponent(subtypeLabel)
-            .addPreferredGap(ComponentPlacement.RELATED)
-            .addComponent(subtypeField, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)).addGroup(
+              .addComponent(computerDomainCombo, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(ComponentPlacement.UNRELATED).addComponent(browsingDomainLabel).addPreferredGap(ComponentPlacement.RELATED)
+              .addComponent(browsingDomainCombo, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(ComponentPlacement.UNRELATED).addComponent(serviceTypeLabel).addPreferredGap(ComponentPlacement.RELATED)
+              .addComponent(serviceTypeScroll).addPreferredGap(ComponentPlacement.UNRELATED).addComponent(subtypeLabel)
+              .addPreferredGap(ComponentPlacement.RELATED)
+              .addComponent(subtypeField, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)).addGroup(
         layout.createSequentialGroup().addComponent(serviceInstanceLabel).addPreferredGap(ComponentPlacement.RELATED)
-            .addComponent(serviceInstanceScroll)).addGroup(
+              .addComponent(serviceInstanceScroll)).addGroup(
         layout.createSequentialGroup().addComponent(nameLabel).addPreferredGap(ComponentPlacement.RELATED)
-            .addComponent(nameField, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-            .addPreferredGap(ComponentPlacement.UNRELATED)
-            .addGroup(layout.createBaselineGroup(false, true).addComponent(hostLabel).addComponent(portLabel))
-            .addPreferredGap(ComponentPlacement.RELATED)
-            .addGroup(layout.createBaselineGroup(false, true).addComponent(hostField).addComponent(portField))
-            .addPreferredGap(ComponentPlacement.UNRELATED).addComponent(propertiesLabel).addComponent(propertiesScroll)));
+              .addComponent(nameField, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+              .addPreferredGap(ComponentPlacement.UNRELATED)
+              .addGroup(layout.createBaselineGroup(false, true).addComponent(hostLabel).addComponent(portLabel))
+              .addPreferredGap(ComponentPlacement.RELATED)
+              .addGroup(layout.createBaselineGroup(false, true).addComponent(hostField).addComponent(portField))
+              .addPreferredGap(ComponentPlacement.UNRELATED).addComponent(propertiesLabel).addComponent(propertiesScroll)));
     pack();
   }
 

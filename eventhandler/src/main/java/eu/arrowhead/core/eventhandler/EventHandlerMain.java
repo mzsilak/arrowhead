@@ -1,16 +1,15 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.eventhandler;
 
 import eu.arrowhead.common.ArrowheadMain;
 import eu.arrowhead.common.misc.CoreSystem;
+import eu.arrowhead.common.web.ArrowheadSystemApi;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,15 +18,15 @@ import java.util.TimerTask;
 
 public class EventHandlerMain extends ArrowheadMain {
 
-  static int PUBLISH_EVENTS_DELAY;
+  static int EVENT_PUBLISHING_TOLERANCE;
 
   {
-    PUBLISH_EVENTS_DELAY = props.getIntProperty("event_publishing_delay", 60);
+    EVENT_PUBLISHING_TOLERANCE = props.getIntProperty("event_publishing_tolerance", 60);
   }
 
   private EventHandlerMain(String[] args) {
-    Set<Class<?>> classes = new HashSet<>(Collections.singleton(EventHandlerResource.class));
-    String[] packages = {"eu.arrowhead.common"};
+    Set<Class<?>> classes = new HashSet<>(Collections.singleton(ArrowheadSystemApi.class));
+    String[] packages = {"eu.arrowhead.common.exception", "eu.arrowhead.common.json", "eu.arrowhead.common.filter", "eu.arrowhead.core.eventhandler"};
     init(CoreSystem.EVENT_HANDLER, args, classes, packages);
 
     //if removing old filters (based on endDate field) is requested, start the TimerTask that provides it

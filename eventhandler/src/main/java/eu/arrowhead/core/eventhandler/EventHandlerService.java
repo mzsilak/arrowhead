@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.eventhandler;
@@ -18,8 +16,10 @@ import eu.arrowhead.common.messages.Event;
 import eu.arrowhead.common.messages.PublishEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -41,7 +41,7 @@ final class EventHandlerService {
     filters.removeIf(current -> current.getStartDate() != null && pe.getEvent().getTimestamp().isBefore(current.getStartDate()));
     filters.removeIf(current -> current.getEndDate() != null && pe.getEvent().getTimestamp().isAfter(current.getEndDate()));
     // Remove the filter if MatchMetadata = true and the event and filter metadata do not match perfectly
-    filters.removeIf(current -> current.getMatchMetadata() && !pe.getEvent().getEventMetadata().equals(current.getFilterMetadata()));
+    filters.removeIf(current -> current.isMatchMetadata() && !pe.getEvent().getEventMetadata().equals(current.getFilterMetadata()));
 
     return filters;
   }
@@ -66,7 +66,7 @@ final class EventHandlerService {
       String url;
       try {
         boolean isSecure = filter.getConsumer().getAuthenticationInfo() != null;
-        url = Utility.getUri(filter.getConsumer().getAddress(), filter.getPort(), filter.getNotifyUri(), isSecure, false);
+        url = Utility.getUri(filter.getConsumer().getAddress(), filter.getConsumer().getPort(), filter.getNotifyUri(), isSecure, false);
       } catch (ArrowheadException | NullPointerException e) {
         e.printStackTrace();
         continue;
@@ -88,6 +88,8 @@ final class EventHandlerService {
   static EventFilter saveEventFilter(EventFilter filter) {
     restrictionMap.clear();
     restrictionMap.put("systemName", filter.getConsumer().getSystemName());
+    restrictionMap.put("address", filter.getConsumer().getAddress());
+    restrictionMap.put("port", filter.getConsumer().getPort());
     ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
     if (consumer == null) {
       log.info("Consumer System " + filter.getConsumer().getSystemName() + " was not in the database, saving it now.");
@@ -101,10 +103,12 @@ final class EventHandlerService {
     if (retrievedFilter == null) {
       filter.setConsumer(consumer);
 
-      List<ArrowheadSystem> sources = new ArrayList<>();
+      Set<ArrowheadSystem> sources = new HashSet<>();
       for (ArrowheadSystem source : filter.getSources()) {
         restrictionMap.clear();
         restrictionMap.put("systemName", source.getSystemName());
+        restrictionMap.put("address", source.getAddress());
+        restrictionMap.put("port", source.getPort());
         ArrowheadSystem retrievedSource = dm.get(ArrowheadSystem.class, restrictionMap);
         if (retrievedSource == null) {
           retrievedSource = dm.save(source);
@@ -122,21 +126,21 @@ final class EventHandlerService {
   static int deleteEventFilter(String eventType, String consumerName) {
     restrictionMap.clear();
     restrictionMap.put("systemName", consumerName);
-    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
-    if (consumer == null) {
+    List<ArrowheadSystem> consumers = dm.getAll(ArrowheadSystem.class, restrictionMap);
+    if (consumers.isEmpty()) {
       return 204; //NO CONTENT ~ call had no effect
     }
 
-    restrictionMap.clear();
-    restrictionMap.put("eventType", eventType);
-    restrictionMap.put("consumer", consumer);
-    EventFilter filter = dm.get(EventFilter.class, restrictionMap);
-    if (filter == null) {
-      return 204;
-    } else {
-      dm.delete(filter);
-      return 200; //OK ~ delete was successful
+    for (ArrowheadSystem consumer : consumers) {
+      restrictionMap.clear();
+      restrictionMap.put("eventType", eventType);
+      restrictionMap.put("consumer", consumer);
+      EventFilter filter = dm.get(EventFilter.class, restrictionMap);
+      if (filter != null) {
+        dm.delete(filter);
+      }
     }
+    return 200; //OK ~ delete was successful
   }
 
 }

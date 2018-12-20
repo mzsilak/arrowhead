@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.common.messages;
@@ -12,14 +10,13 @@ package eu.arrowhead.common.messages;
 import eu.arrowhead.common.database.ArrowheadCloud;
 import eu.arrowhead.common.database.ArrowheadSystem;
 import eu.arrowhead.common.json.support.PreferredProviderSupport;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import javax.validation.Valid;
 
 public class PreferredProvider {
 
+  @Valid
   private ArrowheadSystem providerSystem;
+  @Valid
   private ArrowheadCloud providerCloud;
 
   public PreferredProvider() {
@@ -51,23 +48,16 @@ public class PreferredProvider {
     this.providerCloud = providerCloud;
   }
 
-  public boolean isValid() {
-    return isLocal() || isGlobal();
-  }
-
   public boolean isLocal() {
-    if (providerSystem != null) {
-      providerSystem.missingFields(true, new HashSet<>(Collections.singleton("address")));
-    }
-    return providerCloud == null;
+    return providerSystem != null && providerCloud == null;
   }
 
   public boolean isGlobal() {
-    if (providerCloud != null) {
-      Set<String> mandatoryFields = new HashSet<>(Arrays.asList("address", "gatekeeperServiceURI"));
-      providerCloud.missingFields(true, mandatoryFields);
-    }
-    return true;
+    return providerCloud != null;
+  }
+
+  public boolean isValid() {
+    return isLocal() || isGlobal();
   }
 
   @Override

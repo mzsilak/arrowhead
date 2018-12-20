@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.orchestrator;
@@ -22,6 +20,7 @@ import eu.arrowhead.common.messages.OrchestrationResponse;
 import eu.arrowhead.common.messages.OrchestratorWarnings;
 import eu.arrowhead.common.messages.PreferredProvider;
 import eu.arrowhead.common.messages.ServiceRequestForm;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import org.apache.log4j.Logger;
  *
  * @author Umlauf Zoltán
  */
+@SuppressWarnings("ConstantConditions")
 final class OrchestratorService {
 
   private static final Logger log = Logger.getLogger(OrchestratorService.class.getName());
@@ -81,7 +81,7 @@ final class OrchestratorService {
       srList.removeAll(temp);
       if (srList.isEmpty()) {
         log.error("None of the providers from the SRlist are authorized!");
-        throw new DataNotFoundException("None of the providers from the Service Registry query are authorized!", Status.NOT_FOUND.getStatusCode());
+        throw new DataNotFoundException("None of the providers from the Service Registry query are authorized!");
       }
       log.debug("dynamicOrchestration SR query and Auth cross-check is done");
 
@@ -150,13 +150,12 @@ final class OrchestratorService {
    *
    * @throws DataNotFoundException if all the queried Orchestration Store entry options were exhausted and none were found operational
    */
-
   static OrchestrationResponse orchestrationFromStore(ServiceRequestForm srf) {
     // Querying the Orchestration Store for matching entries
     List<OrchestrationStore> entryList = OrchestratorDriver.queryOrchestrationStore(srf.getRequesterSystem(), srf.getRequestedService());
     int storeSize = entryList.size();
 
-    // Cross-checking the results with the Service Registry and Authorization
+    // Cross-checking the results with the Service Registry and Authorization (modifies the entryList)
     entryList = OrchestratorDriver.crossCheckStoreEntries(srf, entryList);
     log.debug("orchestrationFromStore: SR-Auth cross-check is done");
 
@@ -250,8 +249,7 @@ final class OrchestratorService {
       // Getting the list of valid preferred systems from the ServiceRequestForm, which belong to the target cloud
       List<ArrowheadSystem> preferredSystems = new ArrayList<>();
       for (PreferredProvider provider : srf.getPreferredProviders()) {
-        boolean validProviderSystem = provider.getProviderSystem().missingFields(false, new HashSet<>(Collections.singleton("address"))).isEmpty();
-        if (provider.isGlobal() && provider.getProviderCloud().equals(targetCloud) && provider.getProviderSystem() != null && validProviderSystem) {
+        if (provider.isGlobal() && provider.getProviderCloud().equals(targetCloud) && provider.getProviderSystem() != null) {
           preferredSystems.add(provider.getProviderSystem());
         }
       }
@@ -310,15 +308,16 @@ final class OrchestratorService {
       OrchestrationForm of = new OrchestrationForm(entry.getProvidedService(), entry.getProvider(), entry.getServiceURI());
 
       if (srf.getOrchestrationFlags().get("overrideStore")) {
-        if (entry.getTtl() == 0) {
+        if (entry.getEndOfValidity() == null) {
           of.getWarnings().add(OrchestratorWarnings.TTL_UNKNOWN);
-        } else if (entry.getTtl() < 120) {
+        } else if (entry.getEndOfValidity().isBefore(LocalDateTime.now())) {
+          of.getWarnings().add(OrchestratorWarnings.TTL_EXPIRED);
+        } else if (entry.getEndOfValidity().plusMinutes(2).isBefore(LocalDateTime.now())) {
         /* 2 minutes is an arbitrarily chosen value for the Time To Live measure, which got its value when the SR was queried. The provider
            presumably will stop offering this service in somewhat less than 2 minutes. */
           of.getWarnings().add(OrchestratorWarnings.TTL_EXPIRING);
         }
       }
-
       ofList.add(of);
     }
 
@@ -329,7 +328,7 @@ final class OrchestratorService {
       }
     }
 
-    // Generate the ArrowheadTokens if it is requested based on the service metadata
+    // Generate the ArrowheadTokens if it is requested based on the service metadata (modifies the ofList)
     ofList = OrchestratorDriver.generateAuthTokens(srf, ofList);
 
     log.info("compileOrchestrationResponse creates " + ofList.size() + " orchestration form");

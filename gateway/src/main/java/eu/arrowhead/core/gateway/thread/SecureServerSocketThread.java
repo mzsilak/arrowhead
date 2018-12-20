@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.gateway.thread;
@@ -16,13 +14,13 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.messages.ConnectToConsumerRequest;
+import eu.arrowhead.core.gateway.GatewayMain;
 import eu.arrowhead.core.gateway.GatewayService;
 import eu.arrowhead.core.gateway.model.GatewayEncryption;
 import eu.arrowhead.core.gateway.model.GatewaySession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -48,9 +46,8 @@ public class SecureServerSocketThread extends Thread {
 
   public void run() {
     log.debug("SecureServerSocket thread started");
-    SSLContext sslContext = GatewayService.createSSLContext();
     // Socket for server to listen at.
-    SSLServerSocketFactory serverFactory = sslContext.getServerSocketFactory();
+    SSLServerSocketFactory serverFactory = GatewayMain.serverContext.getServerSocketFactory();
     try {
       sslServerSocket = (SSLServerSocket) serverFactory.createServerSocket(port);
       sslServerSocket.setNeedClientAuth(true);
@@ -106,6 +103,7 @@ public class SecureServerSocketThread extends Thread {
         }
       };
 
+      //noinspection InfiniteLoopStatement
       while (true) {
         // Get the request from the Consumer
         byte[] inputFromConsumer = new byte[1024];
@@ -121,13 +119,13 @@ public class SecureServerSocketThread extends Thread {
         }
         channel.basicPublish("", connectionRequest.getQueueName(), null, request.getEncryptedIVAndMessage());
         channel.basicConsume(connectionRequest.getQueueName().concat("_resp"), true, consumer);
-        channel.basicConsume(connectionRequest.getQueueName().concat("_resp"), true, consumer);
         channel.basicConsume(connectionRequest.getControlQueueName().concat("_resp"), true, controlConsumer);
       }
 
     } catch (IOException | NegativeArraySizeException e) {
       log.info("Remote peer properly closed the socket.");
       GatewayService.consumerSideClose(gatewaySession, port, sslConsumerSocket, sslServerSocket, connectionRequest.getQueueName());
+      e.printStackTrace();
     }
   }
 

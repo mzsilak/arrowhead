@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.gateway;
@@ -22,23 +20,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
 import java.util.ArrayList;
 import java.util.Map.Entry;
-import java.util.ServiceConfigurationError;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
 
@@ -94,9 +84,9 @@ public class GatewayService {
       channel.queueDeclare(controlQueueName.concat("_resp"), false, false, false, null);
       gatewaySession.setConnection(connection);
       gatewaySession.setChannel(channel);
-    } catch (IOException | NullPointerException e) {
+    } catch (IOException | NullPointerException | TimeoutException e) {
       log.error("Creating the channel to the Broker failed");
-      throw new ArrowheadException(e.getMessage(), Status.INTERNAL_SERVER_ERROR.getStatusCode(), e);
+      throw new ArrowheadException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
     }
 
     log.info("Created a channel for broker: " + brokerHost + ":" + brokerPort);
@@ -112,7 +102,7 @@ public class GatewayService {
     byte[] encryptedIVAndMessage;
 
     try {
-      publicKey = SecurityUtils.getPublicKey(publicKeyString);
+      publicKey = SecurityUtils.getPublicKey(publicKeyString, false);
       cipherRSA = Cipher.getInstance("RSA/ECB/PKCS1Padding");
       cipherRSA.init(Cipher.ENCRYPT_MODE, publicKey);
     } catch (GeneralSecurityException e) {
@@ -154,14 +144,11 @@ public class GatewayService {
   public static byte[] decryptMessage(GatewayEncryption gatewayEncryption) {
     Cipher cipherRSA;
     Cipher cipherAES;
-    PrivateKey privateKey;
     byte[] decryptedMessage;
 
     try {
-      KeyStore keyStore = SecurityUtils.loadKeyStore(GatewayMain.keystore, GatewayMain.keystorePass);
-      privateKey = SecurityUtils.getPrivateKey(keyStore, GatewayMain.keystorePass);
       cipherRSA = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-      cipherRSA.init(Cipher.DECRYPT_MODE, privateKey);
+      cipherRSA.init(Cipher.DECRYPT_MODE, GatewayMain.privateKey);
     } catch (GeneralSecurityException e) {
       log.fatal("The initialization of the RSA cipher failed.");
       throw new ArrowheadException(e.getMessage(), Status.INTERNAL_SERVER_ERROR.getStatusCode(), e);
@@ -190,28 +177,6 @@ public class GatewayService {
     }
 
     return decryptedMessage;
-  }
-
-  public static SSLContext createSSLContext() {
-    String keystorePath = GatewayMain.keystore;
-    String keystorePass = GatewayMain.keystorePass;
-    KeyStore keyStore = SecurityUtils.loadKeyStore(keystorePath, keystorePass);
-
-    SSLContext sslContext;
-    KeyManagerFactory kmf;
-    try {
-      kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-      kmf.init(keyStore, keystorePass.toCharArray());
-      sslContext = SSLContext.getInstance("TLS");
-      sslContext.init(kmf.getKeyManagers(), SecurityUtils.createTrustManagers(), null);
-    } catch (NoSuchAlgorithmException | KeyManagementException e) {
-      log.fatal("createSSLContext: failed one of the object initializations");
-      throw new AssertionError("SSL related object initialization failed", e);
-    } catch (KeyStoreException | UnrecoverableKeyException e) {
-      log.error("createSSLContext: keystore malformed, factory init failed");
-      throw new ServiceConfigurationError("Keystore is malformed, or the password is invalid", e);
-    }
-    return sslContext;
   }
 
   /**
@@ -270,7 +235,7 @@ public class GatewayService {
       }
       serverSocket.close();
       log.info("ConsumerSocket closed");
-    } catch (AlreadyClosedException | IOException e) {
+    } catch (AlreadyClosedException | IOException | TimeoutException e) {
       log.error("Channel already closed");
     }
   }
@@ -284,7 +249,7 @@ public class GatewayService {
       gatewaySession.getChannel().close();
       gatewaySession.getConnection().close();
       log.info("ProviderSocket closed");
-    } catch (AlreadyClosedException | IOException e) {
+    } catch (AlreadyClosedException | IOException | TimeoutException e) {
       log.error("Channel already closed");
     }
   }

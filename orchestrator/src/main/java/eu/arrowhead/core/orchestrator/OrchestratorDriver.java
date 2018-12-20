@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.orchestrator;
@@ -33,7 +31,6 @@ import eu.arrowhead.common.messages.TokenGenHelper;
 import eu.arrowhead.common.messages.TokenGenerationRequest;
 import eu.arrowhead.common.messages.TokenGenerationResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,9 +81,10 @@ final class OrchestratorDriver {
     // If there are non-valid entries in the Service Registry response, we filter those out
     List<ServiceRegistryEntry> temp = new ArrayList<>();
     for (ServiceRegistryEntry entry : serviceQueryResult.getServiceQueryData()) {
-      if (!entry.missingFields(false, false, new HashSet<>(Arrays.asList("interfaces", "address"))).isEmpty()) {
+      if (!Utility.isBeanValid(entry)) {
         temp.add(entry);
       }
+      //NOTE this should be done on the SR side I think
       if (!StoreService.hasMatchingInterfaces(service, entry.getProvidedService())) {
         temp.add(entry);
       }
@@ -97,7 +95,7 @@ final class OrchestratorDriver {
     }
     if (!serviceQueryResult.isValid()) {
       log.error("queryServiceRegistry DataNotFoundException");
-      throw new DataNotFoundException("ServiceRegistry query came back empty for " + service.toString(), Status.NOT_FOUND.getStatusCode());
+      throw new DataNotFoundException("ServiceRegistry query came back empty for " + service.toString());
     }
 
     log.info("queryServiceRegistry was successful, number of potential providers for" + service.toString() + " is " + serviceQueryResult
@@ -119,7 +117,7 @@ final class OrchestratorDriver {
 
   static Set<ArrowheadSystem> queryAuthorization(ArrowheadSystem consumer, ArrowheadService service, Set<ArrowheadSystem> providerSet) {
     // Compiling the URI and the request payload
-    String uri = UriBuilder.fromPath(OrchestratorMain.AUTH_CONTROL_URI).path("intracloud").toString();
+    String uri = UriBuilder.fromPath(OrchestratorMain.getAuthControlUri()).path("intracloud").toString();
     IntraCloudAuthRequest request = new IntraCloudAuthRequest(consumer, providerSet, service);
 
     // Sending the request, parsing the returned result
@@ -193,7 +191,7 @@ final class OrchestratorDriver {
    * @param srList The list of <tt>ServiceRegistryEntry</tt>s still being considered
    * @param preferredLocalProviders The set of <tt>ArrowheadSystem</tt>s in this Local Cloud preferred by the requester system
    *
-   * @return the chosen ServiceRegistryEntry object, containing the necessary <tt>ArrowheadSystem</tt> and <tt>String</tt> serviceUri information to
+   * @return the chosen ServiceRegistryEntry object, containing the necessary <tt>ArrowheadSystem</tt> and <tt>String</tt> serviceURI information to
    *     contact the provider
    */
   static ServiceRegistryEntry intraCloudMatchmaking(List<ServiceRegistryEntry> srList, Set<ArrowheadSystem> preferredLocalProviders) {
@@ -253,7 +251,7 @@ final class OrchestratorDriver {
       // Removing non-valid Store entries from the results
       List<OrchestrationStore> temp = new ArrayList<>();
       for (OrchestrationStore entry : retrievedList) {
-        if (!entry.missingFields(false, new HashSet<>(Collections.singleton("address"))).isEmpty()) {
+        if (!Utility.isBeanValid(entry)) {
           temp.add(entry);
         }
       }
@@ -390,11 +388,11 @@ final class OrchestratorDriver {
     GSDRequestForm requestForm = new GSDRequestForm(requestedService, preferredClouds, registryFlags);
 
     // Sending the request, sanity check on the returned result
-    Response response = Utility.sendRequest(OrchestratorMain.GSD_SERVICE_URI, "PUT", requestForm);
+    Response response = Utility.sendRequest(OrchestratorMain.getGsdServiceUri(), "PUT", requestForm);
     GSDResult result = response.readEntity(GSDResult.class);
     if (!result.isValid()) {
       log.error("doGlobalServiceDiscovery DataNotFoundException");
-      throw new DataNotFoundException("GlobalServiceDiscovery yielded no result.", Status.NOT_FOUND.getStatusCode());
+      throw new DataNotFoundException("GlobalServiceDiscovery yielded no result.");
     }
 
     log.info("doGlobalServiceDiscovery returns with " + result.getResponse().size() + " GSDAnswers");
@@ -438,8 +436,7 @@ final class OrchestratorDriver {
     if (onlyPreferred) {
       log.error("interCloudMatchmaking DataNotFoundException, preferredClouds size: " + preferredClouds.size());
       throw new DataNotFoundException(
-          "No preferred Cloud found in the GSD response. Inter-Cloud matchmaking failed, since only preferred providers are allowed.",
-          Status.NOT_FOUND.getStatusCode());
+          "No preferred Cloud found in the GSD response. Inter-Cloud matchmaking failed, since only preferred providers are allowed.");
     }
 
     log.info("interCloudMatchmaking returns the first Cloud entry from the GSD results");
@@ -462,8 +459,7 @@ final class OrchestratorDriver {
     // Getting the list of valid preferred systems from the ServiceRequestForm, which belong to the target cloud
     List<ArrowheadSystem> preferredSystems = new ArrayList<>();
     for (PreferredProvider provider : srf.getPreferredProviders()) {
-      boolean validProviderSystem = provider.getProviderSystem().missingFields(false, new HashSet<>(Collections.singleton("address"))).isEmpty();
-      if (provider.isGlobal() && provider.getProviderCloud().equals(targetCloud) && provider.getProviderSystem() != null && validProviderSystem) {
+      if (provider.isGlobal() && provider.getProviderCloud().equals(targetCloud) && provider.getProviderSystem() != null) {
         preferredSystems.add(provider.getProviderSystem());
       }
     }
@@ -480,11 +476,11 @@ final class OrchestratorDriver {
                                                     negotiationFlags);
 
     // Sending the request, doing sanity check on the returned result
-    Response response = Utility.sendRequest(OrchestratorMain.ICN_SERVICE_URI, "PUT", requestForm);
+    Response response = Utility.sendRequest(OrchestratorMain.getIcnServiceUri(), "PUT", requestForm);
     ICNResult result = response.readEntity(ICNResult.class);
     if (!result.isValid()) {
       log.error("doInterCloudNegotiations DataNotFoundException");
-      throw new DataNotFoundException("ICN failed with the remote cloud.", Status.NOT_FOUND.getStatusCode());
+      throw new DataNotFoundException("ICN failed with the remote cloud.");
     }
 
     log.info("doInterCloudNegotiations returns with " + result.getOrchResponse().getResponse().size() + " possible providers");
@@ -545,7 +541,7 @@ final class OrchestratorDriver {
       TokenGenerationRequest tokenRequest = new TokenGenerationRequest(srf.getRequesterSystem(), srf.getRequesterCloud(), helper.getProviders(),
                                                                        helper.getService(), 0);
       // Sending the token generation request, parsing the response
-      Response authResponse = Utility.sendRequest(OrchestratorMain.TOKEN_GEN_URI, "PUT", tokenRequest);
+      Response authResponse = Utility.sendRequest(OrchestratorMain.getTokenGenUri(), "PUT", tokenRequest);
       TokenGenerationResponse tokenResponse = authResponse.readEntity(TokenGenerationResponse.class);
 
       if (tokenResponse != null && tokenResponse.getTokenData() != null && tokenResponse.getTokenData().size() > 0) {

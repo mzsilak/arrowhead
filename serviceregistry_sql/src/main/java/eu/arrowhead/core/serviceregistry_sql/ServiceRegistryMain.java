@@ -1,17 +1,16 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.serviceregistry_sql;
 
 import eu.arrowhead.common.ArrowheadMain;
 import eu.arrowhead.common.misc.CoreSystem;
-import eu.arrowhead.core.serviceregistry_sql.support.OldServiceRegResource;
+import eu.arrowhead.common.web.ArrowheadServiceApi;
+import eu.arrowhead.common.web.ArrowheadSystemApi;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,8 +28,9 @@ public class ServiceRegistryMain extends ArrowheadMain {
   }
 
   private ServiceRegistryMain(String[] args) {
-    Set<Class<?>> classes = new HashSet<>(Arrays.asList(ServiceRegistryResource.class, ServiceRegistryApi.class, OldServiceRegResource.class));
-    String[] packages = {"eu.arrowhead.common", "eu.arrowhead.core.serviceregistry_sql.filter"};
+    Set<Class<?>> classes = new HashSet<>(Arrays.asList(ArrowheadSystemApi.class, ArrowheadServiceApi.class));
+    String[] packages = {"eu.arrowhead.common.exception", "eu.arrowhead.common.json", "eu.arrowhead.common.filter",
+        "eu.arrowhead.core.serviceregistry_sql"};
     init(CoreSystem.SERVICE_REGISTRY_SQL, args, classes, packages);
 
     //if provider ping is scheduled, start the TimerTask that provides it

@@ -51,7 +51,7 @@ openssl pkcs12 -in keystore.p12 -nodes -nocerts -out server.key
  
 ---------------------------------------------------------------------------
 How to export certificate public key in Base64 with the ArrowheadProvider client skeleton:
-1. Edit the app.properties with the proper client and trust store keystores
+1. Edit the app.config file with the proper client and trust store keystores
 2. Start the skeleton with "-tls" command line arguments.
 3. The skeleton will print out the Base64 encoded string on the console during start. (This is the 2nd print, which starts as: "Server PublicKey Base64: ")
 

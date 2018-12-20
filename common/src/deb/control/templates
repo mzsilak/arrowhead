@@ -1,0 +1,58 @@
+Template: arrowhead-common/install_type
+Type: select
+Choices: Detached, Authorized
+Description: Do you want to perform (1) a detached, standalone install or (2) authorized install with externally issued cloud cert?
+
+Template: arrowhead-common/cloud_cert
+Type: string
+Default:
+Description: Enter the path for the externally issued cloud cert
+
+Template: arrowhead-common/master_cert
+Type: string
+Default:
+Description: Enter the path for the externally issued cloud cert
+
+Template: arrowhead-common/cloud_password
+Type: password
+Default:
+Description: Enter the password for the externally issued cloud cert
+
+Template: arrowhead-common/cloud_alias
+Type: string
+Default:
+Description: Enter the alias for the externally issued cloud cert
+
+Template: arrowhead-common/cloudname
+Type: string
+Default: testcloud
+Description: The name of the Arrowhead local cloud
+
+Template: arrowhead-common/operator
+Type: string
+Default: user
+Description: The name of the operator of the local cloud
+
+Template: arrowhead-common/company
+Type: string
+Default: arrowhead
+Description: The name of your company
+
+Template: arrowhead-common/country
+Type: string
+Default: eu
+Description: The name of your country
+
+Template: arrowhead-common/mysql_password
+Type: password
+Default:
+Description: Password for the MySQL database (leave empty for random). Note that password is stored by debconf in '/var/cache/debconf/passwords.dat'.
+
+Template: arrowhead-common/cert_password
+Type: password
+Default:
+Description: Password for the certificates and stores (leave empty for random). Note that password is stored by debconf in '/var/cache/debconf/passwords.dat'.
+
+Template: arrowhead-common/reconf_warning
+Type: note
+Description: You have to manually reconfigure all Arrowhead systems when changing passwords

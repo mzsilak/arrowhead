@@ -1,17 +1,19 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.common.misc;
 
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.AuthException;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyManagementException;
@@ -21,7 +23,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -31,6 +32,7 @@ import java.util.Base64;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
+import java.util.regex.Pattern;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -41,6 +43,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import org.apache.log4j.Logger;
 
+@SuppressWarnings("unused")
 public final class SecurityUtils {
 
   private static final Logger log = Logger.getLogger(SecurityUtils.class.getName());
@@ -62,11 +65,20 @@ public final class SecurityUtils {
     try {
       Enumeration<String> enumeration = keystore.aliases();
       String alias = enumeration.nextElement();
-      Certificate certificate = keystore.getCertificate(alias);
-      return (X509Certificate) certificate;
+      return (X509Certificate) keystore.getCertificate(alias);
     } catch (KeyStoreException | NoSuchElementException e) {
       log.error("Getting the first cert from keystore failed: " + e.toString() + " " + e.getMessage());
       throw new ServiceConfigurationError("Getting the first cert from keystore failed...", e);
+    }
+  }
+
+  public static String getFirstAliasFromKeyStore(KeyStore keyStore) {
+    try {
+      Enumeration<String> aliases = keyStore.aliases();
+      return aliases.nextElement();
+    } catch (KeyStoreException e) {
+      log.error("Getting the first alias from keystore failed: " + e.toString() + " " + e.getMessage());
+      throw new ServiceConfigurationError("Getting the first alias from keystore failed...", e);
     }
   }
 
@@ -146,7 +158,6 @@ public final class SecurityUtils {
 
       SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
-
       return sslContext;
     } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException | KeyManagementException e) {
       log.fatal("Master SSLContext creation failed: " + e.toString() + " " + e.getMessage());
@@ -154,21 +165,30 @@ public final class SecurityUtils {
     }
   }
 
-  public static SSLContext createAcceptAllSSLContext() {
-    SSLContext sslContext;
+  public static SSLContext createSSLContextWithDummyTrustManager(String keyStorePath, String keyStorePass) {
     try {
-      sslContext = SSLContext.getInstance("TLS");
-      sslContext.init(null, createTrustManagers(), null);
-    } catch (NoSuchAlgorithmException | KeyManagementException e) {
-      log.fatal("AcceptAll SSLContext creation failed: " + e.toString() + " " + e.getMessage());
+      KeyStore keyStore = loadKeyStore(keyStorePath, keyStorePass);
+      String kmfAlgorithm = System.getProperty("ssl.KeyManagerFactory.algorithm", KeyManagerFactory.getDefaultAlgorithm());
+      KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(kmfAlgorithm);
+      keyManagerFactory.init(keyStore, keyStorePass.toCharArray());
+
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(keyManagerFactory.getKeyManagers(), createTrustManagers(), null);
+      return sslContext;
+    } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException | KeyManagementException e) {
+      log.fatal("SSLContext (with dummy trust manager) creation failed: " + e.toString() + " " + e.getMessage());
       throw new ServiceConfigurationError("AcceptAll SSLContext creation failed...", e);
     }
-    return sslContext;
   }
 
   public static boolean isKeyStoreCNArrowheadValid(String commonName) {
     String[] cnFields = commonName.split("\\.", 0);
     return cnFields.length == 5 && cnFields[3].equals("arrowhead") && cnFields[4].equals("eu");
+  }
+
+  public static boolean isKeyStoreCNArrowheadValid(String clientCN, String cloudCN) {
+    String[] clientFields = clientCN.split("\\.", 2);
+    return cloudCN.equalsIgnoreCase(clientFields[1]);
   }
 
   public static boolean isTrustStoreCNArrowheadValid(String commonName) {
@@ -232,22 +252,55 @@ public final class SecurityUtils {
     return sb.toString();
   }
 
-  public static PublicKey getPublicKey(String stringKey) throws InvalidKeySpecException {
-    byte[] byteKey = Base64.getDecoder().decode(stringKey);
-    X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
-    KeyFactory kf = null;
+  /**
+   * Extract a public key either from a PEM encoded file or directly from the Base64 coded string.
+   *
+   * @param filePathOrEncodedKey either a file path for the PEM file or the Base64 encoded key
+   * @param isFilePath true if the first parameter is a file path
+   *
+   * @return the PublicKey
+   */
+  public static PublicKey getPublicKey(String filePathOrEncodedKey, boolean isFilePath) {
+    byte[] keyBytes;
+    if (isFilePath) {
+      keyBytes = loadPEM(filePathOrEncodedKey);
+    } else {
+      try {
+        keyBytes = Base64.getDecoder().decode(filePathOrEncodedKey);
+      } catch (IllegalArgumentException | NullPointerException e) {
+        throw new AuthException("Public key decoding failed! Caused by: " + e.getMessage(), e);
+      }
+    }
     try {
-      kf = KeyFactory.getInstance("RSA");
+      KeyFactory kf = KeyFactory.getInstance("RSA");
+      return kf.generatePublic(new X509EncodedKeySpec(keyBytes));
     } catch (NoSuchAlgorithmException e) {
       log.fatal("KeyFactory.getInstance(String) throws NoSuchAlgorithmException, code needs to be changed!");
-      e.printStackTrace();
+      throw new AssertionError("KeyFactory.getInstance(String) throws NoSuchAlgorithmException, code needs to be changed!", e);
+    } catch (InvalidKeySpecException e) {
+      log.error("getPublicKey: X509 keyspec could not be created from the decoded bytes.");
+      throw new AuthException("PublicKey decoding failed due wrong input key", e);
     }
-
-    // noinspection ConstantConditions
-    return kf.generatePublic(X509publicKey);
   }
 
-  public static TrustManager[] createTrustManagers() {
+  public static byte[] loadPEM(String filePath) {
+    try (FileInputStream in = new FileInputStream(filePath)) {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      byte[] buf = new byte[1024];
+      for (int read = 0; read != -1; read = in.read(buf)) {
+        baos.write(buf, 0, read);
+      }
+      String pem = new String(baos.toByteArray(), StandardCharsets.ISO_8859_1);
+      baos.close();
+      Pattern parse = Pattern.compile("(?m)(?s)^---*BEGIN.*---*$(.*)^---*END.*---*$.*");
+      String encoded = parse.matcher(pem).replaceFirst("$1");
+      return Base64.getMimeDecoder().decode(encoded);
+    } catch (IOException e) {
+      throw new ArrowheadException("IOException occurred during PEM file loading from " + filePath, e);
+    }
+  }
+
+  private static TrustManager[] createTrustManagers() {
     return new TrustManager[]{new X509TrustManager() {
 
       public java.security.cert.X509Certificate[] getAcceptedIssuers() {

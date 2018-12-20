@@ -1,10 +1,8 @@
 /*
- *  Copyright (c) 2018 AITIA International Inc.
- *
- *  This work is part of the Productive 4.0 innovation project, which receives grants from the
- *  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
- *  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
- *  national funding authorities from involved countries.
+ * This work is part of the Productive 4.0 innovation project, which receives grants from the
+ * European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+ * (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+ * national funding authorities from involved countries.
  */
 
 package eu.arrowhead.core.authorization;
@@ -17,15 +15,14 @@ import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.messages.ArrowheadToken;
 import eu.arrowhead.common.messages.RawTokenInfo;
 import eu.arrowhead.common.messages.TokenGenerationRequest;
+import eu.arrowhead.common.misc.SecurityUtils;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -81,13 +78,18 @@ class TokenGenerationService {
       if (request.getConsumerCloud() != null) {
         c = c.concat(".").concat(request.getConsumerCloud().getCloudName()).concat(".").concat(request.getConsumerCloud().getOperator());
       } else {
-        ArrowheadCloud ownCloud = Utility.getOwnCloud();
+        boolean secureMode = Boolean.valueOf(System.getProperty("is_secure", "false"));
+        ArrowheadCloud ownCloud = Utility.getOwnCloud(secureMode);
         c = c.concat(".").concat(ownCloud.getCloudName()).concat(".").concat(ownCloud.getOperator());
       }
       rawTokenInfo.setC(c);
 
+      String s = request.getService().getServiceDefinition();
       // Set service info string
-      String s = request.getService().getInterfaces().get(0) + "." + request.getService().getServiceDefinition();
+      List<String> interfaces = new ArrayList<>(request.getService().getInterfaces());
+      if (!interfaces.isEmpty()) {
+        s = interfaces.get(0) + "." + s;
+      }
       rawTokenInfo.setS(s);
 
       // Set the token validity duration
@@ -116,7 +118,7 @@ class TokenGenerationService {
       // Finally, generate the token and signature strings
       try {
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte[] tokenBytes = cipher.doFinal(json.getBytes("UTF-8"));
+        byte[] tokenBytes = cipher.doFinal(json.getBytes(StandardCharsets.UTF_8));
         System.out.println("Token bytes: " + Arrays.toString(tokenBytes));
         signature.update(tokenBytes);
         byte[] sigBytes = signature.sign();
@@ -154,11 +156,12 @@ class TokenGenerationService {
 
     for (ArrowheadSystem provider : providers) {
       try {
-        PublicKey key = getPublicKey(provider.getAuthenticationInfo());
+        PublicKey key = SecurityUtils.getPublicKey(provider.getAuthenticationInfo(), false);
         keys.add(key);
-      } catch (InvalidKeySpecException | NullPointerException e) {
+      } catch (AuthException e) {
         log.error("The stored auth info for the ArrowheadSystem (" + provider.getSystemName()
-                      + ") is not a proper RSA public key spec, or it is incorrectly encoded. The public key can not be generated from it.");
+                      + ") is not a proper RSA public key spec, or it is incorrectly encoded, or missing. The public key can not be decoded from "
+                      + "it.");
         keys.add(null);
       }
     }
@@ -177,28 +180,6 @@ class TokenGenerationService {
     }
 
     return keys;
-  }
-
-  private static PublicKey getPublicKey(String stringKey) throws InvalidKeySpecException {
-    byte[] byteKey;
-    try {
-      byteKey = Base64.getDecoder().decode(stringKey);
-    } catch (IllegalArgumentException e) {
-      throw new AuthException(
-          "Provider public key decoding failed during token generation! Make sure the database only has valid, base-64 coded provider public "
-              + "keys! Caused by: " + e.getMessage(), Status.INTERNAL_SERVER_ERROR.getStatusCode(), e);
-    }
-    X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
-    KeyFactory kf;
-    try {
-      kf = KeyFactory.getInstance("RSA");
-    } catch (NoSuchAlgorithmException e) {
-      log.fatal("KeyFactory.getInstance(String) throws NoSuchAlgorithmException, code needs to be changed!");
-      throw new AssertionError("KeyFactory.getInstance(String) throws NoSuchAlgorithmException, code needs to be changed!", e);
-    }
-
-    //noinspection ConstantConditions
-    return kf.generatePublic(X509publicKey);
   }
 
 }

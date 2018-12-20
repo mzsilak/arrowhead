@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~  Copyright (c) 2018 AITIA International Inc.
-  ~
-  ~  This work is part of the Productive 4.0 innovation project, which receives grants from the
-  ~  European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
-  ~  (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
-  ~  national funding authorities from involved countries.
+  ~ This work is part of the Productive 4.0 innovation project, which receives grants from the
+  ~ European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+  ~ (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+  ~ national funding authorities from involved countries.
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -14,19 +12,19 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>arrowhead</artifactId>
+    <artifactId>core</artifactId>
     <groupId>eu.arrowhead</groupId>
-    <version>4.0</version>
+    <version>${revision}</version>
   </parent>
 
-  <artifactId>eventhandler</artifactId>
+  <artifactId>arrowhead-eventhandler</artifactId>
   <packaging>jar</packaging>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.version>3.1</maven.compiler.version>
-    <maven.dependency.version>2.5.1</maven.dependency.version>
+    <maven.compiler.version>3.8.0</maven.compiler.version>
+    <maven.dependency.version>2.10</maven.dependency.version>
     <maven.jar.version>3.0.2</maven.jar.version>
     <maven.resources.version>2.7</maven.resources.version>
   </properties>
@@ -35,7 +33,7 @@
 
     <dependency>
       <groupId>eu.arrowhead</groupId>
-      <artifactId>common</artifactId>
+      <artifactId>arrowhead-common</artifactId>
     </dependency>
 
   </dependencies>
@@ -120,6 +118,62 @@
                   <directory>config</directory>
                 </resource>
               </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>jdeb</artifactId>
+        <groupId>org.vafer</groupId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>jdeb</goal>
+            </goals>
+            <configuration>
+              <snapshotExpand>true</snapshotExpand>
+              <snapshotTemplate>[YYMMddHHmm].${git.commit.id.abbrev}</snapshotTemplate>
+              <deb>target/${project.artifactId}_${revision}.deb</deb>
+              <verbose>true</verbose>
+              <controlDir>${basedir}/src/deb/control</controlDir>
+              <dataSet>
+
+                <data>
+                  <type>file</type>
+                  <src>${project.build.directory}/${project.build.finalName}.jar</src>
+                  <mapper>
+                    <type>perm</type>
+                    <prefix>/usr/share/arrowhead</prefix>
+                    <user>arrowhead</user>
+                    <filemode>755</filemode>
+                  </mapper>
+                </data>
+
+                <data>
+                  <type>link</type>
+                  <linkName>/usr/share/arrowhead/${project.artifactId}.jar</linkName>
+                  <linkTarget>/usr/share/arrowhead/${project.build.finalName}.jar</linkTarget>
+                </data>
+
+                <data>
+                  <type>file</type>
+                  <src>${project.basedir}/src/deb/arrowhead-eventhandler.service</src>
+                  <mapper>
+                    <type>perm</type>
+                    <prefix>/etc/systemd/system</prefix>
+                    <filemode>664</filemode>
+                  </mapper>
+                </data>
+
+                <data>
+                  <type>file</type>
+                  <src>${project.basedir}/src/deb/create_event_handler_db_empty.sql</src>
+                  <dst>/usr/share/arrowhead/db/create_event_handler_db_empty.sql</dst>
+                </data>
+
+              </dataSet>
             </configuration>
           </execution>
         </executions>
