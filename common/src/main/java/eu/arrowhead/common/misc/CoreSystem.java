@@ -20,6 +20,7 @@ public enum CoreSystem {
                 Arrays.asList("keypass", "truststore", "truststorepass"), Arrays.asList(CoreSystemService.AUTH_CONTROL_SERVICE, CoreSystemService.TOKEN_GEN_SERVICE)),
   CERTIFICATE_AUTHORITY(8458, 8459, null, null, null),
   CHOREOGRAPHER(8456, 8457, null, null, null),
+  DATAMANAGER(8460, 8461, ArrowheadMain.dbFields, ArrowheadMain.certFields, Arrays.asList(CoreSystemService.HISTORIAN_SERVICE, CoreSystemService.PROXY_SERVICE)),
   EVENTHANDLER(8454, 8455, ArrowheadMain.dbFields, ArrowheadMain.certFields,
                Arrays.asList(CoreSystemService.EVENT_PUBLISH, CoreSystemService.EVENT_SUBSCRIPTION)),
   GATEKEEPER_INTERNAL(8446, 8447, ArrowheadMain.dbFields, Arrays

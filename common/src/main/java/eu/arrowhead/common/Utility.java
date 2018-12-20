@@ -90,6 +90,13 @@ public final class Utility {
     throw new AssertionError("Arrowhead Common:Utility is a non-instantiable class");
   }
 
+
+  /**
+   * Creates a new Client object
+   *
+   * @param context Set to null to disable SSL security
+   * @return A new Client object, with SSl enabled if context is not null
+   */
   private static Client createClient(SSLContext context) {
     ClientConfig configuration = new ClientConfig();
     configuration.property(ClientProperties.CONNECT_TIMEOUT, 30000);
@@ -117,6 +124,16 @@ public final class Utility {
     SR_QUERY_URI = UriBuilder.fromUri(uri).path("query").build().toString();
   }
 
+
+  /**
+   * Sends a secure request
+   *
+   * @param uri The endpoint 
+   * @param method The method
+   * @param payload The payload to send
+   * @param givenContext The SSL context
+   * @return A Response
+   */
   public static <T> Response sendRequest(String uri, String method, T payload, SSLContext givenContext) {
     log.info("Sending " + method + " request to: " + uri);
 
@@ -176,10 +193,26 @@ public final class Utility {
     return response;
   }
 
+
+  /**
+   * Sends a request
+   *
+   * @param uri The endpoint 
+   * @param method The method
+   * @param payload The payload to send
+   * @return A Response
+   */
   public static <T> Response sendRequest(String uri, String method, T payload) {
     return sendRequest(uri, method, payload, null);
   }
 
+
+  /**
+   * Handles a reponse and any errors
+   *
+   * @param response
+   * @param uri
+   */
   private static void handleException(Response response, String uri) {
     //The response body has to be extracted before the stream closes
     String errorMessageBody = toPrettyJson(null, response.getEntity());
@@ -238,6 +271,17 @@ public final class Utility {
     }
   }
 
+
+  /**
+   * Creates an URI from individudal parts
+   *
+   * @param address The base address
+   * @param port The port number
+   * @param serviceUri The path
+   * @param isSecure secure on non-secure protol version
+   * @param serverStart True if the URI is used to create a server socket
+   * @return An URI as String
+   */
   public static String getUri(String address, int port, String serviceUri, boolean isSecure, boolean serverStart) {
     if (address == null) {
       log.error("Address can not be null (Utility:getUri throws NPE)");
@@ -312,6 +356,13 @@ public final class Utility {
     return uriList;
   }
 
+
+  /**
+   * Gets the Arrowhead cloud
+   *
+   * @param isSecure True if secure communication must be used
+   * @return An ArrowheadCloud object
+   */
   public static ArrowheadCloud getOwnCloud(boolean isSecure) {
     List<OwnCloud> cloudList = DatabaseManager.getInstance().getAll(OwnCloud.class, null);
     if (cloudList.isEmpty()) {
@@ -341,6 +392,7 @@ public final class Utility {
     }
   }
 
+
   public static String stripEndSlash(String uri) {
     if (uri != null && uri.endsWith("/")) {
       return uri.substring(0, uri.length() - 1);
@@ -348,6 +400,13 @@ public final class Utility {
     return uri;
   }
 
+
+  /**
+   * Gets the data as String from an Inputstream
+   *
+   * @param is The InputStream
+   * @return the stream data as a String
+   */
   public static String getRequestPayload(InputStream is) {
     StringBuilder sb = new StringBuilder();
     String line;
@@ -371,6 +430,14 @@ public final class Utility {
     }
   }
 
+
+  /**
+   * Converts an Object to JSON (string)
+   *
+   * @param jsonstring
+   * @param obj The Object to convert
+   * @return A JSON-formatted string
+   */
   public static String toPrettyJson(String jsonString, Object obj) {
     try {
       if (jsonString != null) {

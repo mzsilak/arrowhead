@@ -27,6 +27,11 @@ nohup java -jar eventhandler-4.0.jar -d -daemon &> insecure_eventhandler.log &
 echo Event Handler started
 sleep 10s
 
+cd ../../datamanager/target
+nohup java -jar datamanager-4.0.jar -d -daemon &> insecure_dm.log &
+echo DataManager started
+sleep 10s
+
 cd ../../gatekeeper/target
 nohup java -jar gatekeeper-4.0.jar -d -daemon &> insecure_gk.log &
 echo Gatekeeper started

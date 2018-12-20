@@ -14,6 +14,8 @@ public enum CoreSystemService {
   TOKEN_GEN_SERVICE("TokenGeneration", "authorization/token"),
   EVENT_PUBLISH("EventPublishing", "eventhandler/publish"),
   EVENT_SUBSCRIPTION("EventSubscription", "eventhandler/subscription"),
+  HISTORIAN_SERVICE("Historian", "datamanager/historian"),
+  PROXY_SERVICE("Proxy", "datamanager/proxy"),
   GSD_SERVICE("GlobalServiceDiscovery", "gatekeeper/init_gsd"),
   ICN_SERVICE("InterCloudNegotiations", "gatekeeper/init_icn"),
   GW_CONSUMER_SERVICE("ConnectToConsumer", "gateway/connectToConsumer"),

@@ -128,9 +128,20 @@ public abstract class ArrowheadMain {
       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
       String input = "";
       try {
-        while (!input.equals("stop")) {
-          input = br.readLine();
-        }
+  	boolean stop = false;
+	do {
+	  System.out.print("> ");
+	  input = br.readLine();
+	  switch (input) {
+	    case "stop":
+	      stop = true;
+	    break;
+	    case "help":
+	    System.out.println("Supported commands:\n  help\tPrints help message\n  stop\tShutdown the system");
+	    break;
+	  }
+        } while (stop != true);
+          
         br.close();
       } catch (IOException e) {
         e.printStackTrace();
