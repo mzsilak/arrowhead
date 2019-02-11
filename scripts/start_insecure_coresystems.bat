@@ -8,12 +8,12 @@ SET time_to_sleep=10
 echo Starting Core Systems... Service initializations usually need around 20 seconds.
 
 cd ..\serviceregistry_sql\target
-START "" /B "cmd /c javaw -DarrowheadSystem=serviceregistry_sql -jar arrowhead-serviceregistry-sql-4.1.1-SNAPSHOT.jar -d -daemon > insecure_sr.log 2>&1"
+START "" /B "cmd /c javaw -DarrowheadSystem=serviceregistry_sql -jar arrowhead-serviceregistry-sql-4.1.1-SNAPSHOT.jar -d -daemon -opcua > insecure_sr.log 2>&1"
 echo Service Registry started
 timeout /t %time_to_sleep% /nobreak > NUL
 
 cd ..\..\authorization\target
-START "" /B "cmd /c javaw -jar -DarrowheadSystem=authorization arrowhead-authorization-4.1.1-SNAPSHOT.jar -d -daemon > insecure_auth.log 2>&1"
+START "" /B "cmd /c javaw -jar -DarrowheadSystem=authorization arrowhead-authorization-4.1.1-SNAPSHOT.jar -d -daemon -opcua > insecure_auth.log 2>&1"
 echo Authorization started
 
 cd ..\..\gateway\target

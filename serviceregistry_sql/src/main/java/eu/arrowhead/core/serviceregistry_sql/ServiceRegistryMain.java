@@ -7,15 +7,16 @@
 
 package eu.arrowhead.core.serviceregistry_sql;
 
-import eu.arrowhead.common.ArrowheadMain;
-import eu.arrowhead.common.misc.CoreSystem;
-import eu.arrowhead.common.web.ArrowheadServiceApi;
-import eu.arrowhead.common.web.ArrowheadSystemApi;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import eu.arrowhead.common.ArrowheadMain;
+import eu.arrowhead.common.misc.CoreSystem;
+import eu.arrowhead.common.web.ArrowheadServiceApi;
+import eu.arrowhead.common.web.ArrowheadSystemApi;
 
 public class ServiceRegistryMain extends ArrowheadMain {
 
@@ -32,6 +33,11 @@ public class ServiceRegistryMain extends ArrowheadMain {
     String[] packages = {"eu.arrowhead.common.exception", "eu.arrowhead.common.json", "eu.arrowhead.common.filter",
         "eu.arrowhead.core.serviceregistry_sql"};
     init(CoreSystem.SERVICE_REGISTRY_SQL, args, classes, packages);
+    for (String s: args) {
+        if (s.equals("-opcua")) {
+            new ServiceRegistryOpcUa(getOpcUaServer());
+        }
+    }
 
     //if provider ping is scheduled, start the TimerTask that provides it
     if (props.getBooleanProperty("ping_scheduled", false)) {
