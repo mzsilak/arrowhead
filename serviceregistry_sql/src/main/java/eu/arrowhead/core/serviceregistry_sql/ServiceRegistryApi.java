@@ -10,6 +10,7 @@ package eu.arrowhead.core.serviceregistry_sql;
 import eu.arrowhead.common.DatabaseManager;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
+import eu.arrowhead.common.database.EventFilter;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
 import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
@@ -217,40 +218,24 @@ public class ServiceRegistryApi {
 
   @PUT
   @Path("update")
-  public Response updateServiceRegistryEntry(@Valid ServiceRegistryEntry entry) {
-    entry.toDatabase();
-    restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
-    ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
-    if (service == null) {
-      log.info("updateServiceRegistryEntry throws DataNotFoundException");
-      throw new DataNotFoundException("Requested Service Registry entry not found in the database.");
-    }
-
-    restrictionMap.clear();
-    restrictionMap.put("systemName", entry.getProvider().getSystemName());
-    restrictionMap.put("address", entry.getProvider().getAddress());
-    restrictionMap.put("port", entry.getProvider().getPort());
-    ArrowheadSystem provider = dm.get(ArrowheadSystem.class, restrictionMap);
-    if (provider == null) {
-      log.info("updateServiceRegistryEntry throws DataNotFoundException");
-      throw new DataNotFoundException("Requested Service Registry entry not found in the database.");
-    }
-
-    restrictionMap.clear();
-    restrictionMap.put("provider", provider);
-    restrictionMap.put("providedService", service);
-    ServiceRegistryEntry retreivedEntry = dm.get(ServiceRegistryEntry.class, restrictionMap);
-    if (retreivedEntry == null) {
-      log.info("updateServiceRegistryEntry throws DataNotFoundException");
-      throw new DataNotFoundException("Requested Service Registry entry not found in the database.");
-    }
-    retreivedEntry.setServiceURI(entry.getServiceURI());
-    retreivedEntry.setEndOfValidity(entry.getEndOfValidity());
-    retreivedEntry = dm.merge(retreivedEntry);
-    retreivedEntry.fromDatabase(false);
-
+  public Response updateServiceRegistryEntry(@Valid ServiceRegistryEntry updatedEntry) {
+    updatedEntry.toDatabase();
+    ServiceRegistryEntry entry = dm.get(ServiceRegistryEntry.class, updatedEntry.getId()).orElseThrow(
+        () -> new DataNotFoundException("ServiceRegistryEntry not found with id: " + updatedEntry.getId()));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
     log.info("updateServiceRegistryEntry successfully returns.");
-    return Response.status(Status.ACCEPTED).entity(retreivedEntry).build();
+    return Response.ok().entity(entry).build();
+  }
+
+  @PUT
+  @Path("subscriptions/{id}")
+  public Response updateEventSubscriptionById(@PathParam("id") long id, @Valid EventFilter updatedFilter) {
+    EventFilter filter = dm.get(EventFilter.class, id).<DataNotFoundException>orElseThrow(
+        () -> new DataNotFoundException("EventFilter not found with id: " + id));
+    filter.partialUpdateFilter(updatedFilter);
+    filter = dm.merge(filter);
+    return Response.ok().entity(filter).build();
   }
 
   @DELETE

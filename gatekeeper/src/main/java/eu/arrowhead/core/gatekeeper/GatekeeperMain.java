@@ -320,13 +320,14 @@ public class GatekeeperMain implements NeedsCoreSystemService {
   }
 
   private static void useSRService(boolean registering) {
-    URI uri = UriBuilder.fromUri(OUTBOUND_BASE_URI).build();
-    boolean isSecure = uri.getScheme().equals("https");
-    ArrowheadSystem gkSystem = new ArrowheadSystem("gatekeeper", uri.getHost(), uri.getPort(), BASE64_PUBLIC_KEY);
+    final URI uri = UriBuilder.fromUri(OUTBOUND_BASE_URI).build();
+    final boolean isSecure = uri.getScheme().equals("https");
+    final String interfaceName = isSecure ? "HTTP-SECURE-JSON" : "HTTP-INSECURE-JSON";
+    final ArrowheadSystem gkSystem = new ArrowheadSystem("gatekeeper", uri.getHost(), uri.getPort(), BASE64_PUBLIC_KEY);
     ArrowheadService gsdService = new ArrowheadService(Utility.createSD(CoreSystemService.GSD_SERVICE.getServiceDef(), isSecure),
-                                                       Collections.singleton("JSON"), null);
+                                                       Collections.singleton(interfaceName), null);
     ArrowheadService icnService = new ArrowheadService(Utility.createSD(CoreSystemService.ICN_SERVICE.getServiceDef(), isSecure),
-                                                       Collections.singleton("JSON"), null);
+                                                       Collections.singleton(interfaceName), null);
     if (isSecure) {
       gsdService.setServiceMetadata(ArrowheadMain.secureServerMetadata);
       icnService.setServiceMetadata(ArrowheadMain.secureServerMetadata);

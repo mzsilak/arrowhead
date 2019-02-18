@@ -27,6 +27,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -219,6 +220,17 @@ public class AuthorizationApi {
         savedAuthRights) {
     };
     return Response.status(Status.CREATED).entity(entity).build();
+  }
+
+  @PUT
+  @Path("intracloud")
+  public Response updateIntraEntry(@Valid IntraCloudAuthorization updatedEntry) {
+    IntraCloudAuthorization entry = dm.get(IntraCloudAuthorization.class, updatedEntry.getId()).orElseThrow(
+        () -> new DataNotFoundException("IntraCloudAuthorization entry not found with id: " + updatedEntry.getId()));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
+    log.info("updateIntraEntry successfully returns.");
+    return Response.ok().entity(entry).build();
   }
 
   /**
@@ -420,6 +432,17 @@ public class AuthorizationApi {
         savedAuthRights) {
     };
     return Response.status(Status.CREATED).entity(entity).build();
+  }
+
+  @PUT
+  @Path("intercloud")
+  public Response updateInterEntry(@Valid InterCloudAuthorization updatedEntry) {
+    InterCloudAuthorization entry = dm.get(InterCloudAuthorization.class, updatedEntry.getId()).orElseThrow(
+        () -> new DataNotFoundException("InterCloudAuthorization entry not found with id: " + updatedEntry.getId()));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
+    log.info("InterCloudAuthorization successfully returns.");
+    return Response.ok().entity(entry).build();
   }
 
   /**

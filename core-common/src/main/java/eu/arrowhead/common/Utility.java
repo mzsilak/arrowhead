@@ -223,6 +223,8 @@ public final class Utility {
           throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
         case AUTH:
           throw new AuthException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+        case BAD_MEDIA_TYPE:
+          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode());
         case BAD_METHOD:
           throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
         case BAD_PAYLOAD:
@@ -281,8 +283,11 @@ public final class Utility {
   }
 
   public static Optional<String[]> getServiceInfo(String serviceId) {
-    ArrowheadService service = sslContext == null ? new ArrowheadService(createSD(serviceId, false), Collections.singleton("JSON"), null)
-                                                  : new ArrowheadService(createSD(serviceId, true), Collections.singleton("JSON"),
+    ArrowheadService service = sslContext == null ? new ArrowheadService(createSD(serviceId, false),
+                                                                         Collections.singleton("HTTP-INSECURE-JSON"),
+                                                                         null)
+                                                  : new ArrowheadService(createSD(serviceId, true),
+                                                                         Collections.singleton("HTTP-SECURE-JSON"),
                                                                          ArrowheadMain.secureServerMetadata);
     ServiceQueryForm sqf = new ServiceQueryForm(service, true, false);
     Response response = sendRequest(SR_QUERY_URI, "PUT", sqf);

@@ -35,13 +35,17 @@ final class EventHandlerService {
     restrictionMap.clear();
     restrictionMap.put("eventType", pe.getEvent().getType());
     List<EventFilter> filters = dm.getAll(EventFilter.class, restrictionMap);
-    // Remove the filter if the event source is not in the filter's source list (every source is accepted, if the filter has no sources)
+    // Remove the filter if the event source is not in the filter's source list (every source is accepted, if the
+    // filter has no sources)
     filters.removeIf(current -> !current.getSources().isEmpty() && !current.getSources().contains(pe.getSource()));
     // Remove the filter if the event timestamp is not between the filter's startDate and endDate
-    filters.removeIf(current -> current.getStartDate() != null && pe.getEvent().getTimestamp().isBefore(current.getStartDate()));
-    filters.removeIf(current -> current.getEndDate() != null && pe.getEvent().getTimestamp().isAfter(current.getEndDate()));
+    filters.removeIf(
+        current -> current.getStartDate() != null && pe.getEvent().getTimestamp().isBefore(current.getStartDate()));
+    filters.removeIf(
+        current -> current.getEndDate() != null && pe.getEvent().getTimestamp().isAfter(current.getEndDate()));
     // Remove the filter if MatchMetadata = true and the event and filter metadata do not match perfectly
-    filters.removeIf(current -> current.isMatchMetadata() && !pe.getEvent().getEventMetadata().equals(current.getFilterMetadata()));
+    filters.removeIf(
+        current -> current.isMatchMetadata() && !pe.getEvent().getEventMetadata().equals(current.getFilterMetadata()));
 
     return filters;
   }
@@ -66,7 +70,9 @@ final class EventHandlerService {
       String url;
       try {
         boolean isSecure = filter.getConsumer().getAuthenticationInfo() != null;
-        url = Utility.getUri(filter.getConsumer().getAddress(), filter.getConsumer().getPort(), filter.getNotifyUri(), isSecure, false);
+        url = Utility
+            .getUri(filter.getConsumer().getAddress(), filter.getConsumer().getPort(), filter.getNotifyUri(), isSecure,
+                    false);
       } catch (ArrowheadException | NullPointerException e) {
         e.printStackTrace();
         continue;
@@ -75,11 +81,13 @@ final class EventHandlerService {
     }
 
     Map<String, Boolean> result = new ConcurrentHashMap<>();
-    /*Note: ForkJoinPool.commonPool (used by CompletableFuture as default) has a default size equal to one less than the number of cores of your CPU.
-      For faster execution (when there is a large number of urls), use custom thread pool manager:
+    /*Note: ForkJoinPool.commonPool (used by CompletableFuture as default) has a default size equal to one less than
+    the number of cores of your CPU. For faster execution (when there is a large number of urls),
+    use custom thread pool manager:
       Executor myThreadPool = Executors.newFixedThreadPool(numberOfThreads);*/
-    Stream<CompletableFuture> stream = urls.stream().map(url -> CompletableFuture.supplyAsync(() -> sendRequest(url, eventPublished.getEvent()))
-                                                                                 .thenAcceptAsync(published -> result.put(url, published)));
+    Stream<CompletableFuture> stream = urls.stream().map(
+        url -> CompletableFuture.supplyAsync(() -> sendRequest(url, eventPublished.getEvent()))
+                                .thenAcceptAsync(published -> result.put(url, published)));
     CompletableFuture.allOf(stream.toArray(CompletableFuture[]::new)).join();
     log.info("Event published to " + urls.size() + " subscribers.");
     return result;
