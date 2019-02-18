@@ -64,6 +64,7 @@ public class ServiceRegistryResource {
 
     public Response registerGeneric(ServiceRegistryEntry entry) {
         entry.toDatabase();
+        restrictionMap.clear();
         restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
         ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
         if (service == null) {
@@ -149,6 +150,7 @@ public class ServiceRegistryResource {
     }
 
     public Response removeGeneric(ServiceRegistryEntry entry) {
+        restrictionMap.clear();
         restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
         ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
 
