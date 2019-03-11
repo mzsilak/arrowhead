@@ -155,7 +155,12 @@ public class DatabaseManager {
     } catch (Exception e) {
       log.error("get throws exception: " + e.getMessage(), e);
       if (transaction != null) {
-        transaction.rollback();
+        try {
+          transaction.rollback();
+        }catch(IllegalStateException ise)
+        {
+          log.warn(ise.getMessage());
+        }
       }
       throw e;
     }
@@ -287,6 +292,7 @@ public class DatabaseManager {
     try (Session session = getSessionFactory().openSession()) {
       transaction = session.beginTransaction();
       for (T object : objects) {
+        log.debug("Deleting " + object);
         session.delete(object);
       }
       transaction.commit();

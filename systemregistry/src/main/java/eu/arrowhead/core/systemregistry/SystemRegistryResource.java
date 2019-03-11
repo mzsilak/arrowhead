@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.apache.log4j.Logger;
+
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -33,9 +35,11 @@ import javax.ws.rs.core.Response.Status;
 @Produces(MediaType.APPLICATION_JSON)
 public class SystemRegistryResource implements RegistryResource<SystemRegistryEntry, Response> {
 
+  private final Logger logger;
   private final SystemRegistryService registryService;
 
   public SystemRegistryResource() {
+    logger = Logger.getLogger(SystemRegistryResource.class);
     registryService = new SystemRegistryService();
   }
 
@@ -52,6 +56,7 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     SystemRegistryEntry returnValue;
     Response response;
 
+    logger.info("Lookup: " + id);
     returnValue = registryService.lookup(id);
     response = Response.status(Status.OK).entity(returnValue).build();
 
@@ -64,6 +69,7 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     SystemRegistryEntry returnValue;
     Response response;
 
+    logger.info("publish: " + entry);
     returnValue = registryService.publish(entry);
     response = Response.status(Status.CREATED).entity(returnValue).build();
 
@@ -76,6 +82,7 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     SystemRegistryEntry returnValue;
     Response response;
 
+    logger.info("unpublish: " + entry);
     returnValue = registryService.unpublish(entry);
     response = Response.status(Status.OK).entity(returnValue).build();
 

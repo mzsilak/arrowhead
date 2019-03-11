@@ -31,14 +31,14 @@ import eu.arrowhead.common.RegistryResource;
 @Produces(MediaType.APPLICATION_JSON)
 public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEntry, Response> {
 
-  private final Logger log = Logger.getLogger(DeviceRegistryResource.class.getName());
+  private final Logger logger = Logger.getLogger(DeviceRegistryResource.class.getName());
   private final DeviceRegistryService registryService;
 
 
   public DeviceRegistryResource() throws ExceptionInInitializerError {
     super();
     registryService = new DeviceRegistryService();
-    log.info(DeviceRegistryResource.class.getSimpleName() + " created");
+    logger.info(DeviceRegistryResource.class.getSimpleName() + " created");
   }
 
   @GET
@@ -55,6 +55,7 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
     DeviceRegistryEntry returnValue;
     Response response;
 
+    logger.info("Lookup: " + id);
     returnValue = registryService.lookup(id);
     response = Response.status(Status.OK).entity(returnValue).build();
 
@@ -67,6 +68,7 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
     DeviceRegistryEntry returnValue;
     Response response;
 
+    logger.info("publish: " + entry);
     returnValue = registryService.publish(entry);
     response = Response.status(Status.CREATED).entity(returnValue).build();
 
@@ -79,6 +81,7 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
     DeviceRegistryEntry returnValue;
     Response response;
 
+    logger.info("unpublish: " + entry);
     returnValue = registryService.unpublish(entry);
     response = Response.status(Status.OK).entity(returnValue).build();
 

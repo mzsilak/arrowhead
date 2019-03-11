@@ -14,6 +14,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.misc.registry_interfaces.RegistryService;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.persistence.EntityNotFoundException;
@@ -63,12 +64,23 @@ public class DeviceRegistryService implements RegistryService<DeviceRegistryEntr
 		final DeviceRegistryEntry returnValue;
 
 		try {
-			final Map<String, Object> restrictions = new HashMap<>();
-			ArrowheadDevice device = entity.getProvidedDevice();
-			restrictions.put("deviceName", device.getDeviceName());
-			device = databaseManager.get(ArrowheadDevice.class, restrictions);
+			if(entity.getProvidedDevice().getId() == null)
+			{
+				final Map<String, Object> restrictions = new HashMap<>();
+				ArrowheadDevice device = entity.getProvidedDevice();
+				restrictions.put("deviceName", device.getDeviceName());
+				List<ArrowheadDevice> deviceList = databaseManager.getAll(ArrowheadDevice.class, restrictions);
 
-			databaseManager.delete(device);
+				for(ArrowheadDevice dev : deviceList)
+				{
+					databaseManager.delete(dev);
+				}
+			}
+			else
+			{
+				databaseManager.delete(entity.getProvidedDevice());
+			}
+
 			databaseManager.delete(entity);
 			returnValue = entity;
 		} catch (final ArrowheadException e) {
@@ -84,7 +96,14 @@ public class DeviceRegistryService implements RegistryService<DeviceRegistryEntr
 
 		if (provider.getId() != null) {
 			Optional<ArrowheadDevice> optional = databaseManager.get(ArrowheadDevice.class, provider.getId());
-			returnValue = optional.orElseThrow(() -> new ArrowheadException("ArrowheadDevice does not exist", Status.BAD_REQUEST.getStatusCode()));
+			if(optional.isPresent())
+			{
+				returnValue = optional.get();
+			}
+			else
+			{
+				returnValue = databaseManager.save(provider);
+			}
 		} else {
 			returnValue = databaseManager.save(provider);
 		}
