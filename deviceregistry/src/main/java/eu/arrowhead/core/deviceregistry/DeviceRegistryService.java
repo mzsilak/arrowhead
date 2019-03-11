@@ -13,6 +13,8 @@ import eu.arrowhead.common.database.DeviceRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.misc.registry_interfaces.RegistryService;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.persistence.EntityNotFoundException;
 import javax.ws.rs.core.Response.Status;
@@ -61,6 +63,12 @@ public class DeviceRegistryService implements RegistryService<DeviceRegistryEntr
 		final DeviceRegistryEntry returnValue;
 
 		try {
+			final Map<String, Object> restrictions = new HashMap<>();
+			ArrowheadDevice device = entity.getProvidedDevice();
+			restrictions.put("deviceName", device.getDeviceName());
+			device = databaseManager.get(ArrowheadDevice.class, restrictions);
+
+			databaseManager.delete(device);
 			databaseManager.delete(entity);
 			returnValue = entity;
 		} catch (final ArrowheadException e) {

@@ -14,6 +14,8 @@ import eu.arrowhead.common.database.SystemRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.misc.registry_interfaces.RegistryService;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.persistence.EntityNotFoundException;
 import javax.ws.rs.core.Response.Status;
@@ -63,6 +65,13 @@ public class SystemRegistryService implements RegistryService<SystemRegistryEntr
 		final SystemRegistryEntry returnValue;
 
 		try {
+			final Map<String, Object> restrictions = new HashMap<>();
+			ArrowheadSystem system = entity.getProvidedSystem();
+			restrictions.put("systemName", system.getSystemName());
+			restrictions.put("address", system.getAddress());
+			restrictions.put("port", system.getPort());
+			system = databaseManager.get(ArrowheadSystem.class, restrictions);
+			databaseManager.delete(system);
 			databaseManager.delete(entity);
 			returnValue = entity;
 		} catch (final ArrowheadException e) {
