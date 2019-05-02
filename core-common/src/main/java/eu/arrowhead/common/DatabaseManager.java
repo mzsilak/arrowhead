@@ -30,7 +30,8 @@ import org.hibernate.criterion.Restrictions;
 import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.query.Query;
 
-//NOTE should move to EntityManager from Sessions, using the JPA criteria API (Hibernate criteria will be removed in Hibernate 6)
+//NOTE should move to EntityManager from Sessions, using the JPA criteria API (Hibernate criteria will be removed in
+// Hibernate 6)
 public class DatabaseManager {
 
   private static volatile DatabaseManager instance;
@@ -54,12 +55,14 @@ public class DatabaseManager {
       }
 
       try {
-        Configuration configuration = new Configuration().configure("hibernate.cfg.xml").setProperty("hibernate.connection.url", dbAddress)
+        Configuration configuration = new Configuration().configure("hibernate.cfg.xml")
+                                                         .setProperty("hibernate.connection.url", dbAddress)
                                                          .setProperty("hibernate.connection.username", dbUser)
                                                          .setProperty("hibernate.connection.password", dbPassword);
         sessionFactory = configuration.buildSessionFactory();
       } catch (Exception e) {
-        throw new ServiceConfigurationError("Database connection could not be established, check default.conf/app.conf files!", e);
+        throw new ServiceConfigurationError(
+            "Database connection could not be established, check default.conf/app.conf files!", e);
       }
     }
   }
@@ -82,7 +85,8 @@ public class DatabaseManager {
 
   private synchronized SessionFactory getSessionFactory() {
     if (sessionFactory == null) {
-      Configuration configuration = new Configuration().configure("hibernate.cfg.xml").setProperty("hibernate.connection.url", dbAddress)
+      Configuration configuration = new Configuration().configure("hibernate.cfg.xml")
+                                                       .setProperty("hibernate.connection.url", dbAddress)
                                                        .setProperty("hibernate.connection.username", dbUser)
                                                        .setProperty("hibernate.connection.password", dbPassword);
       sessionFactory = configuration.buildSessionFactory();
@@ -235,15 +239,24 @@ public class DatabaseManager {
       if (transaction != null) {
         transaction.rollback();
       }
-      //NOTE root cause of persistenceException can be other reasons too
-      log.error("DatabaseManager:save throws DuplicateEntryException", e);
-      throw new DuplicateEntryException(
-          "There is already an entry in the database with these parameters. Please check the unique fields of the " + objects.getClass(),
-          Status.BAD_REQUEST.getStatusCode(), e);
+      Throwable cause = e.getCause();
+      if (cause instanceof ConstraintViolationException && cause.getMessage().equals("could not execute statement")) {
+        log.error("DatabaseManager:save throws DuplicateEntryException", e);
+        throw new DuplicateEntryException(
+            "There is already an entry in the database with these parameters. Please check the unique fields of the "
+                + objects.getClass(), Status.BAD_REQUEST.getStatusCode(), e);
+      } else {
+        Throwable rootCause = Utility.getExceptionRootCause(e);
+        log.error("Unknown exception during database save: " + rootCause.getClass() + " - " + rootCause.getMessage(),
+                  e);
+        throw new ArrowheadException(
+            "Unknown exception during database save: " + rootCause.getClass() + " - " + rootCause.getMessage(), e);
+      }
     } catch (Exception e) {
       if (transaction != null) {
         transaction.rollback();
       }
+      log.error("Unknown exception during database save", e);
       throw e;
     }
 
@@ -265,15 +278,25 @@ public class DatabaseManager {
       if (transaction != null) {
         transaction.rollback();
       }
-      log.error("DatabaseManager:merge throws DuplicateEntryException", e);
-      throw new DuplicateEntryException(
-          "There is already an entry in the database with these parameters. Please check the unique fields of the "
-              + objects.getClass(),
-          Status.BAD_REQUEST.getStatusCode(), e);
+
+      Throwable cause = e.getCause();
+      if (cause instanceof ConstraintViolationException && cause.getMessage().equals("could not execute statement")) {
+        log.error("DatabaseManager:save merge DuplicateEntryException", e);
+        throw new DuplicateEntryException(
+            "There is already an entry in the database with these parameters. Please check the unique fields of the "
+                + objects.getClass(), Status.BAD_REQUEST.getStatusCode(), e);
+      } else {
+        Throwable rootCause = Utility.getExceptionRootCause(e);
+        log.error("Unknown exception during database merge: " + rootCause.getClass() + " - " + rootCause.getMessage(),
+                  e);
+        throw new ArrowheadException(
+            "Unknown exception during database merge: " + rootCause.getClass() + " - " + rootCause.getMessage(), e);
+      }
     } catch (Exception e) {
       if (transaction != null) {
         transaction.rollback();
       }
+      log.error("Unknown exception during database merge", e);
       throw e;
     }
 
@@ -290,19 +313,29 @@ public class DatabaseManager {
         session.delete(object);
       }
       transaction.commit();
-    } catch (ConstraintViolationException e) {
+    } catch (PersistenceException e) {
       if (transaction != null) {
         transaction.rollback();
       }
-      log.error("DatabaseManager:delete throws ConstraintViolationException");
-      throw new ArrowheadException(
-          "There is a reference to this object in another table, which prevents the delete operation. (" + objects
-              .getClass() + ")",
-          Status.BAD_REQUEST.getStatusCode(), e);
+
+      Throwable cause = e.getCause();
+      if (cause instanceof ConstraintViolationException && cause.getMessage().equals("could not execute statement")) {
+        log.error("DatabaseManager:delete throws ConstraintViolationException", e);
+        throw new ArrowheadException(
+            "There is a reference to this object in another table, which prevents the delete operation. (" + objects
+                .getClass() + ")", Status.BAD_REQUEST.getStatusCode(), e);
+      } else {
+        Throwable rootCause = Utility.getExceptionRootCause(e);
+        log.error("Unknown exception during database delete: " + rootCause.getClass() + " - " + rootCause.getMessage(),
+                  e);
+        throw new ArrowheadException(
+            "Unknown exception during database delete: " + rootCause.getClass() + " - " + rootCause.getMessage(), e);
+      }
     } catch (Exception e) {
       if (transaction != null) {
         transaction.rollback();
       }
+      log.error("Unknown exception during database delete", e);
       throw e;
     }
   }

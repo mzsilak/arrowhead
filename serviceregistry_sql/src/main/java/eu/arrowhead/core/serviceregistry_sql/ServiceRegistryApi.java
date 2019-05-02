@@ -217,11 +217,11 @@ public class ServiceRegistryApi {
   }
 
   @PUT
-  @Path("update")
-  public Response updateServiceRegistryEntry(@Valid ServiceRegistryEntry updatedEntry) {
+  @Path("update/{id}")
+  public Response updateServiceRegistryEntry(@PathParam("id") long id, @Valid ServiceRegistryEntry updatedEntry) {
     updatedEntry.toDatabase();
-    ServiceRegistryEntry entry = dm.get(ServiceRegistryEntry.class, updatedEntry.getId()).orElseThrow(
-        () -> new DataNotFoundException("ServiceRegistryEntry not found with id: " + updatedEntry.getId()));
+    ServiceRegistryEntry entry = dm.get(ServiceRegistryEntry.class, id).orElseThrow(
+        () -> new DataNotFoundException("ServiceRegistryEntry not found with id: " + id));
     entry.updateEntryWith(updatedEntry);
     entry = dm.merge(entry);
     log.info("updateServiceRegistryEntry successfully returns.");
@@ -231,8 +231,8 @@ public class ServiceRegistryApi {
   @PUT
   @Path("subscriptions/{id}")
   public Response updateEventSubscriptionById(@PathParam("id") long id, @Valid EventFilter updatedFilter) {
-    EventFilter filter = dm.get(EventFilter.class, id).<DataNotFoundException>orElseThrow(
-        () -> new DataNotFoundException("EventFilter not found with id: " + id));
+    EventFilter filter = dm.get(EventFilter.class, id)
+                           .orElseThrow(() -> new DataNotFoundException("EventFilter not found with id: " + id));
     filter.partialUpdateFilter(updatedFilter);
     filter = dm.merge(filter);
     return Response.ok().entity(filter).build();

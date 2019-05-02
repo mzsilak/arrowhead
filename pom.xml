@@ -36,7 +36,7 @@
   </modules>
 
   <properties>
-    <base.version>4.1.1</base.version>
+    <base.version>4.1.2</base.version>
     <revision>${base.version}-SNAPSHOT</revision>
     <mvn.compiler.version>3.8.0</mvn.compiler.version>
     <mvn.compile.target>1.8</mvn.compile.target>

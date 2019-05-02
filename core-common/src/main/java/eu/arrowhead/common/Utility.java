@@ -102,7 +102,8 @@ public final class Utility {
 
     Client client;
     if (context != null) {
-      client = ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid).build();
+      client = ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid)
+                            .build();
     } else {
       client = ClientBuilder.newClient(configuration);
     }
@@ -129,7 +130,8 @@ public final class Utility {
     if (uri == null) {
       log.error("sendRequest received null uri");
       throw new NullPointerException(
-          "send (HTTP) request method received null URL. This most likely means the invoking Core System could not fetch the service"
+          "send (HTTP) request method received null URL. This most likely means the invoking Core System could not "
+              + "fetch the service"
               + " of another Core System from the Service Registry!");
     }
     if (uri.startsWith("https")) {
@@ -138,12 +140,14 @@ public final class Utility {
 
     if (isSecure && sslClient == null) {
       throw new AuthException(
-          "SSL Context is not set, but secure request sending was invoked. An insecure module can not send requests to secure modules.",
+          "SSL Context is not set, but secure request sending was invoked. An insecure module can not send requests "
+              + "to secure modules.",
           Status.UNAUTHORIZED.getStatusCode());
     }
     Client usedClient = isSecure ? givenContext != null ? createClient(givenContext) : sslClient : client;
 
-    Builder request = usedClient.target(UriBuilder.fromUri(uri).build()).request().header("Content-type", "application/json");
+    Builder request = usedClient.target(UriBuilder.fromUri(uri).build()).request()
+                                .header("Content-type", "application/json");
     Response response; // will not be null after the switch-case
     try {
       switch (method) {
@@ -165,11 +169,12 @@ public final class Utility {
     } catch (ProcessingException e) {
       if (e.getCause().getMessage().contains("PKIX path")) {
         log.error("The system at " + uri + " is not part of the same certificate chain of trust!");
-        throw new AuthException("The system at " + uri + " is not part of the same certificate chain of trust!", Status.UNAUTHORIZED.getStatusCode(),
-                                e);
+        throw new AuthException("The system at " + uri + " is not part of the same certificate chain of trust!",
+                                Status.UNAUTHORIZED.getStatusCode(), e);
       } else {
         log.error("UnavailableServerException occurred at " + uri, e);
-        throw new UnavailableServerException("Could not get any response from: " + uri, Status.SERVICE_UNAVAILABLE.getStatusCode(), e);
+        throw new UnavailableServerException("Could not get any response from: " + uri,
+                                             Status.SERVICE_UNAVAILABLE.getStatusCode(), e);
       }
     }
 
@@ -217,32 +222,43 @@ public final class Utility {
       log.info("Request failed, response body: " + errorMessageBody);
       throw new RuntimeException("Unknown error occurred at " + uri + ". Check log for possibly more information.");
     } else {
-      log.error("Request returned with " + errorMessage.getExceptionType().toString() + ": " + errorMessage.getErrorMessage());
+      log.error("Request returned with " + errorMessage.getExceptionType().toString() + ": " + errorMessage
+          .getErrorMessage());
       switch (errorMessage.getExceptionType()) {
         case ARROWHEAD:
-          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                       errorMessage.getOrigin());
         case AUTH:
-          throw new AuthException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new AuthException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                  errorMessage.getOrigin());
         case BAD_MEDIA_TYPE:
           throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode());
         case BAD_METHOD:
-          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                       errorMessage.getOrigin());
         case BAD_PAYLOAD:
-          throw new BadPayloadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new BadPayloadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                        errorMessage.getOrigin());
         case BAD_URI:
-          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                       errorMessage.getOrigin());
         case DATA_NOT_FOUND:
-          throw new DataNotFoundException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new DataNotFoundException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                          errorMessage.getOrigin());
         case DNS_SD:
           throw new DnsException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
         case DUPLICATE_ENTRY:
-          throw new DuplicateEntryException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new DuplicateEntryException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                            errorMessage.getOrigin());
         case GENERIC:
-          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                       errorMessage.getOrigin());
         case JSON_PROCESSING:
-          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                       errorMessage.getOrigin());
         case UNAVAILABLE:
-          throw new UnavailableServerException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(), errorMessage.getOrigin());
+          throw new UnavailableServerException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
+                                               errorMessage.getOrigin());
       }
     }
   }
@@ -271,7 +287,8 @@ public final class Utility {
       new URI(url);
     } catch (URISyntaxException e) {
       if (serverStart) {
-        throw new ServiceConfigurationError(url + " is not a valid URL to start a HTTP server! Please fix the address field in the properties file.");
+        throw new ServiceConfigurationError(
+            url + " is not a valid URL to start a HTTP server! Please fix the address field in the properties file.");
       } else {
         log.error("Bad URL components passed to getUri() method");
         throw new ArrowheadException(url + " is not a valid URL!");
@@ -302,7 +319,8 @@ public final class Utility {
       String serviceURI = getUri(coreSystem.getAddress(), coreSystem.getPort(), entry.getServiceURI(), isSecure, false);
       if (serviceId.equals(CoreSystemService.GW_CONSUMER_SERVICE.getServiceDef()) || serviceId
           .equals(CoreSystemService.GW_PROVIDER_SERVICE.getServiceDef())) {
-        return Optional.of(new String[]{serviceURI, coreSystem.getSystemName(), coreSystem.getAddress(), coreSystem.getAuthenticationInfo()});
+        return Optional.of(new String[]{serviceURI, coreSystem.getSystemName(), coreSystem.getAddress(),
+            coreSystem.getAuthenticationInfo()});
       }
       return Optional.of(new String[]{serviceURI});
     }
@@ -315,9 +333,8 @@ public final class Utility {
     List<String> uriList = new ArrayList<>();
     for (NeighborCloud cloud : cloudList) {
       if (isSecure == cloud.getCloud().isSecure()) {
-        uriList.add(
-            getUri(cloud.getCloud().getAddress(), cloud.getCloud().getPort(), cloud.getCloud().getGatekeeperServiceURI(), cloud.getCloud().isSecure(),
-                   false));
+        uriList.add(getUri(cloud.getCloud().getAddress(), cloud.getCloud().getPort(),
+                           cloud.getCloud().getGatekeeperServiceURI(), cloud.getCloud().isSecure(), false));
       }
     }
 
@@ -328,8 +345,9 @@ public final class Utility {
     List<OwnCloud> cloudList = DatabaseManager.getInstance().getAll(OwnCloud.class, null);
     if (cloudList.isEmpty()) {
       log.error("Utility:getOwnCloud not found in the database.");
-      throw new DataNotFoundException("Own Cloud information not found in the database. This information is needed for the Gatekeeper System.",
-                                      Status.NOT_FOUND.getStatusCode());
+      throw new DataNotFoundException(
+          "Own Cloud information not found in the database. This information is needed for the Gatekeeper System.",
+          Status.NOT_FOUND.getStatusCode());
     }
     if (cloudList.size() > 2) {
       log.warn("own_cloud table should NOT have more than 2 rows.");
@@ -341,7 +359,8 @@ public final class Utility {
         }
       }
       log.error("Utility:getOwnCloud finds no secure own cloud!");
-      throw new DataNotFoundException("Could not find secure own cloud information in the database!", Status.NOT_FOUND.getStatusCode());
+      throw new DataNotFoundException("Could not find secure own cloud information in the database!",
+                                      Status.NOT_FOUND.getStatusCode());
     } else {
       for (OwnCloud cloud : cloudList) {
         if (!cloud.getCloud().isSecure()) {
@@ -349,7 +368,8 @@ public final class Utility {
         }
       }
       log.error("Utility:getOwnCloud finds no insecure own cloud!");
-      throw new DataNotFoundException("Could not find insecure own cloud information in the database!", Status.NOT_FOUND.getStatusCode());
+      throw new DataNotFoundException("Could not find insecure own cloud information in the database!",
+                                      Status.NOT_FOUND.getStatusCode());
     }
   }
 
@@ -369,7 +389,8 @@ public final class Utility {
       }
     } catch (UnsupportedEncodingException e) {
       log.fatal("getRequestPayload ISReader has unsupported charset set!");
-      throw new AssertionError("getRequestPayload InputStreamReader has unsupported character set! Code needs to be changed!", e);
+      throw new AssertionError(
+          "getRequestPayload InputStreamReader has unsupported character set! Code needs to be changed!", e);
     } catch (IOException e) {
       log.error("IOException while reading the request payload");
       throw new RuntimeException("IOException occured while reading an incoming request payload", e);
@@ -400,7 +421,8 @@ public final class Utility {
       }
     } catch (IOException e) {
       throw new ArrowheadException(
-          "Jackson library threw IOException during JSON serialization! Wrapping it in RuntimeException. Exception message: " + e.getMessage(), e);
+          "Jackson library threw IOException during JSON serialization! Wrapping it in RuntimeException. Exception "
+              + "message: " + e.getMessage(), e);
     }
     return null;
   }
@@ -434,7 +456,8 @@ public final class Utility {
       prop.load(inputStream);
     } catch (FileNotFoundException ex) {
       throw new ServiceConfigurationError(
-          fileName + " file not found, make sure you have the correct working directory set! (directory where the config folder can be found)", ex);
+          fileName + " file not found, make sure you have the correct working directory "
+              + "set! (directory where the config folder can be found)", ex);
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -450,7 +473,8 @@ public final class Utility {
       } else if (Files.isReadable(Paths.get(DEFAULT_CONF_DIR))) {
         prop.load(new FileInputStream(DEFAULT_CONF_DIR));
       } else {
-        throw new ServiceConfigurationError("default.conf file not found in the working directory! (" + System.getProperty("user.dir") + ")");
+        throw new ServiceConfigurationError(
+            "default.conf file not found in the working directory! (" + System.getProperty("user.dir") + ")");
       }
 
       if (Files.isReadable(Paths.get(APP_CONF))) {
@@ -501,7 +525,8 @@ public final class Utility {
     }
   }
 
-  /* If needed, this method can be used to get the IPv4 address of the host machine. Public point-to-point IP addresses are prioritized over private
+  /* If needed, this method can be used to get the IPv4 address of the host machine. Public point-to-point IP
+  addresses are prioritized over private
     (site local) IP addresses */
   @SuppressWarnings("unused")
   public static String getIpAddress() throws SocketException {
@@ -516,9 +541,10 @@ public final class Utility {
       }
     }
 
-    addresses = addresses.stream().filter(current -> !current.getHostAddress().contains(":")).filter(current -> !current.isLoopbackAddress())
-                         .filter(current -> !current.isMulticastAddress()).filter(current -> !current.isLinkLocalAddress())
-                         .collect(Collectors.toList());
+    addresses = addresses.stream().filter(current -> !current.getHostAddress().contains(":"))
+                         .filter(current -> !current.isLoopbackAddress())
+                         .filter(current -> !current.isMulticastAddress())
+                         .filter(current -> !current.isLinkLocalAddress()).collect(Collectors.toList());
     if (addresses.isEmpty()) {
       throw new SocketException("No valid addresses left after filtering");
     }
@@ -535,5 +561,16 @@ public final class Utility {
     Validator validator = factory.getValidator();
     Set<ConstraintViolation<T>> violations = validator.validate(bean);
     return violations.isEmpty();
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  public static Throwable getExceptionRootCause(Throwable e) {
+    Throwable cause = null;
+    Throwable result = e;
+
+    while (null != (cause = result.getCause()) && (result != cause)) {
+      result = cause;
+    }
+    return result;
   }
 }

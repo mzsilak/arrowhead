@@ -11,6 +11,7 @@ import eu.arrowhead.common.Utility;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -25,6 +26,7 @@ public class InboundDebugFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) {
     if (Boolean.valueOf(System.getProperty("debug_mode", "false"))) {
       System.out.println("New " + requestContext.getMethod() + " request at: " + requestContext.getUriInfo().getRequestUri().toString());
+      System.out.println("Timestamp: " + LocalDateTime.now());
       String prettyJson = Utility.getRequestPayload(requestContext.getEntityStream());
       System.out.println(prettyJson);
 

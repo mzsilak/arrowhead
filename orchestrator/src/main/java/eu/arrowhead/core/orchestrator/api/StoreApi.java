@@ -232,7 +232,7 @@ public class StoreApi {
     } else {
       entry.setDefaultEntry(!entry.isDefaultEntry());
       dm.merge(entry);
-      log.info("toggleIsDefault succesfully returns.");
+      log.info("toggleIsDefault successfully returns.");
       return Response.ok(entry).build();
     }
   }
@@ -246,8 +246,8 @@ public class StoreApi {
   @Path("update/{id}")
   public Response updateStoreEntry(@PathParam("id") long id, @Valid OrchestrationStore updatedEntry) {
     updatedEntry.validateCrossParameterConstraints();
-    OrchestrationStore entry = dm.get(OrchestrationStore.class, updatedEntry.getId()).orElseThrow(
-        () -> new DataNotFoundException("OrchestrationStore entry not found with id: " + updatedEntry.getId()));
+    OrchestrationStore entry = dm.get(OrchestrationStore.class, id).orElseThrow(
+        () -> new DataNotFoundException("OrchestrationStore entry not found with id: " + id));
     entry.updateEntryWith(updatedEntry);
     entry = dm.merge(entry);
     log.info("updateStoreEntry successfully returns.");
@@ -261,18 +261,15 @@ public class StoreApi {
    */
   @DELETE
   @Path("{id}")
-  public Response deleteEntry(@PathParam("id") Integer id) {
-
-    restrictionMap.put("id", id);
-    OrchestrationStore entry = dm.get(OrchestrationStore.class, restrictionMap);
-    if (entry == null) {
-      log.info("deleteEntry had no effect.");
-      return Response.noContent().build();
-    } else {
+  public Response deleteEntry(@PathParam("id") long id) {
+    return dm.get(OrchestrationStore.class, id).map(entry -> {
       dm.delete(entry);
-      log.info("deleteEntry successfully returns.");
+      log.info("deleteStoreEntry successfully returns.");
       return Response.ok().build();
-    }
+    }).<DataNotFoundException>orElseThrow(() -> {
+      log.info("deleteStoreEntry had no effect.");
+      throw new DataNotFoundException("OrchestrationStore entry not found with id: " + id);
+    });
   }
 
   /**
