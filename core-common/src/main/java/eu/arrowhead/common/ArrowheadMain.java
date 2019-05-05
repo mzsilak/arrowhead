@@ -29,7 +29,8 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNodeContext;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -50,6 +51,7 @@ import eu.arrowhead.common.misc.CoreSystemService;
 import eu.arrowhead.common.misc.SecurityUtils;
 import eu.arrowhead.common.misc.TypeSafeProperties;
 import eu.arrowhead.common.opcua.ArrowheadOpcUaServer;
+//import eu.arrowhead.common.opcua.ArrowheadOpcUaServer;
 
 public abstract class ArrowheadMain {
 
@@ -65,7 +67,8 @@ public abstract class ArrowheadMain {
     private boolean daemon = false;
     private CoreSystem coreSystem;
     private HttpServer server;
-    private OpcUaServer opcuaserver;
+    private UaNodeContext nodeContext;
+    private UaNodeManager nodeManager;
     private String baseUri;
     private String base64PublicKey;
     private int registeringTries = 1;
@@ -106,7 +109,8 @@ public abstract class ArrowheadMain {
                     Runtime.getRuntime().addShutdownHook(new Thread(() -> future.complete(null)));
                     // future.get();
                     System.out.println("Starting an opc ua server");
-                    opcuaserver = arrowheaduaserver.getServer();
+                    nodeContext = arrowheaduaserver.getNodeContext();
+                    nodeManager = arrowheaduaserver.getNodeManager();
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -320,7 +324,11 @@ public abstract class ArrowheadMain {
         return packages;
     }
 
-    public OpcUaServer getOpcUaServer() {
-        return opcuaserver;
+    public UaNodeContext getOpcUaNodeContext() {
+        return nodeContext;
+    }
+    
+    public UaNodeManager getOpcUaNodeManager() {
+        return nodeManager;
     }
 }

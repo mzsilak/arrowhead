@@ -1,20 +1,35 @@
 package eu.arrowhead.core.serviceregistry_sql.opcua;
 
-import org.eclipse.milo.opcua.sdk.server.annotations.UaInputArgument;
-import org.eclipse.milo.opcua.sdk.server.annotations.UaMethod;
-import org.eclipse.milo.opcua.sdk.server.util.AnnotationBasedInvocationHandler.InvocationContext;
+import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
+import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.arrowhead.common.messages.ServiceQueryForm;
-
-public class Query {
+public class Query extends AbstractMethodInvocationHandler {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @UaMethod
-    public void invoke(InvocationContext context,
+    public Query(UaMethodNode node) {
+        super(node);
+    }
 
-            @UaInputArgument(name = "ServiceQueryForm", description = "ServiceQueryForm") ServiceQueryForm queryForm) {
-        logger.debug("Invoking register() method of Object '{}'", context.getObjectNode().getBrowseName().getName());
+    @Override
+    public Argument[] getInputArguments() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Argument[] getOutputArguments() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

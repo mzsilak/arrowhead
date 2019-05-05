@@ -2,12 +2,14 @@ package eu.arrowhead.core.serviceregistry_sql.opcua;
 
 import java.io.IOException;
 
-import org.eclipse.milo.opcua.sdk.server.annotations.UaInputArgument;
-import org.eclipse.milo.opcua.sdk.server.annotations.UaMethod;
-import org.eclipse.milo.opcua.sdk.server.annotations.UaOutputArgument;
-import org.eclipse.milo.opcua.sdk.server.util.AnnotationBasedInvocationHandler.InvocationContext;
-import org.eclipse.milo.opcua.sdk.server.util.AnnotationBasedInvocationHandler.Out;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
+import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,21 +19,40 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import eu.arrowhead.common.exception.DuplicateEntryException;
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
-public class Register extends ServiceRegistryResource {
+public class Register extends AbstractMethodInvocationHandler {
+    public Register(UaMethodNode node) {
+        super(node);
+    }
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @UaMethod
-    public void invoke(InvocationContext context,
+    public static final Argument SR_ENTRY = new Argument("sr_entry", Identifiers.String, ValueRanks.Scalar, null,
+            new LocalizedText("ServiceRegistryEntry"));
 
-            @UaInputArgument(name = "ServiceRegistryEntry", description = "ServiceRegistryEntry") String entry,
-            @UaOutputArgument(name = "Result", description = "Call result") Out<String> out) throws UaException {
-        logger.debug("Invoking register() method of Object '{}'", context.getObjectNode().getBrowseName().getName());
+    public static final Argument RESULT = new Argument("result", Identifiers.String, ValueRanks.Scalar, null,
+            new LocalizedText("Call result"));
+
+    @Override
+    public Argument[] getInputArguments() {
+        return new Argument[] { SR_ENTRY };
+    }
+
+    @Override
+    public Argument[] getOutputArguments() {
+        return new Argument[] { RESULT };
+    }
+
+    @Override
+    protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
+        String out = "";
+        logger.debug("Invoking register() method of Object '{}'", invocationContext.getObjectId());
         try {
             try {
-                registerGeneric(new ServiceRegistryOpcUaHelper().sreFromJsonString(entry));
-                out.set("Success");
+                new ServiceRegistryResource().registerGeneric(
+                        new ServiceRegistryOpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
+                out = "Success";
             } catch (DuplicateEntryException dee) {
-                out.set("DuplicateEntryException");
+                out = "DuplicateEntryException";
             }
         } catch (JsonParseException e) {
             // TODO Auto-generated catch block
@@ -43,5 +64,7 @@ public class Register extends ServiceRegistryResource {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
+        return new Variant[] { new Variant(out) };
     }
 }

@@ -1,9 +1,15 @@
 package eu.arrowhead.core.serviceregistry_sql.opcua;
+
 import java.io.IOException;
 
-import org.eclipse.milo.opcua.sdk.server.annotations.UaInputArgument;
-import org.eclipse.milo.opcua.sdk.server.annotations.UaMethod;
-import org.eclipse.milo.opcua.sdk.server.util.AnnotationBasedInvocationHandler.InvocationContext;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
+import org.eclipse.milo.opcua.stack.core.Identifiers;
+import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,16 +18,32 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
-public class Remove extends ServiceRegistryResource {
+public class Remove extends AbstractMethodInvocationHandler {
+    public Remove(UaMethodNode node) {
+        super(node);
+    }
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @UaMethod
-    public void invoke(InvocationContext context,
+    public static final Argument SR_ENTRY = new Argument("sr_entry", Identifiers.String, ValueRanks.Scalar, null,
+            new LocalizedText("ServiceRegistryEntry"));
 
-            @UaInputArgument(name = "ServiceRegistryEntry", description = "ServiceRegistryEntry") String entry) {
-        logger.debug("Invoking remove() method of Object '{}'", context.getObjectNode().getBrowseName().getName());
+    @Override
+    public Argument[] getInputArguments() {
+        return new Argument[] { SR_ENTRY };
+    }
+
+    @Override
+    public Argument[] getOutputArguments() {
+        return null;
+    }
+
+    @Override
+    protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
+        logger.debug("Invoking remove() method of Object '{}'", invocationContext.getObjectId());
         try {
-            removeGeneric(new ServiceRegistryOpcUaHelper().sreFromJsonString(entry));
+            new ServiceRegistryResource().removeGeneric(
+                    new ServiceRegistryOpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
         } catch (JsonParseException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -32,6 +54,7 @@ public class Remove extends ServiceRegistryResource {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
+        return new Variant[] { new Variant(null) };
     }
 }

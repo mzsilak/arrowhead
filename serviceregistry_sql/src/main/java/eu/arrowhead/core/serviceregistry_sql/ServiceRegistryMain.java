@@ -35,7 +35,7 @@ public class ServiceRegistryMain extends ArrowheadMain {
     init(CoreSystem.SERVICE_REGISTRY_SQL, args, classes, packages);
     for (String s: args) {
         if (s.equals("-opcua")) {
-            new ServiceRegistryOpcUa(getOpcUaServer());
+            new ServiceRegistryOpcUa(getOpcUaNodeManager(), getOpcUaNodeContext());
         }
     }
 
