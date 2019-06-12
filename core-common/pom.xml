@@ -19,14 +19,15 @@
   <artifactId>arrowhead-core-common</artifactId>
   <packaging>jar</packaging>
   
-  <repositories>
+  <!-- <repositories>
   <repository>
     <id>oss-sonatype</id>
     <name>oss-sonatype</name>
     <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 </repository>
   </repositories>
-
+ -->
+ 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -144,32 +145,20 @@
     <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-client</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.0</version>
 </dependency>
 
 	<dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-server</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.0</version>
 </dependency>
 
-	<dependency>
-    	<groupId>org.eclipse.milo</groupId>
-    	<artifactId>stack-client</artifactId>
-    	<version>0.3.0-SNAPSHOT</version>
-	</dependency>
-	
-	<dependency>
-	    <groupId>org.eclipse.milo</groupId>
-	    <artifactId>stack-server</artifactId>
-	    <version>0.3.0-SNAPSHOT</version>
-	</dependency>
-
-	<dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk15on</artifactId>
-        <version>1.59</version>
-    </dependency>
+<dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+    <version>27.1-jre</version>
+</dependency>
 
   </dependencies>
 

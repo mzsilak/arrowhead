@@ -104,22 +104,23 @@ public class ArrowheadOpcUaServer {
         Set<EndpointConfiguration> endpointConfigurations = createEndpointConfigurations(certificate);
 
         OpcUaServerConfig serverConfig = OpcUaServerConfig.builder().setApplicationUri(applicationUri)
-                .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Example Server"))
+                .setApplicationName(LocalizedText.english("Arrowhead OPC UA Service Registry Server"))
                 .setEndpoints(endpointConfigurations)
-                .setBuildInfo(new BuildInfo("urn:eclipse:milo:example-server", "eclipse", "eclipse milo example server",
+                .setBuildInfo(new BuildInfo("urn:arrowhead:opcua-sr-server", "arrowhead", "arrowhead opcua server",
                         OpcUaServer.SDK_VERSION, "", DateTime.now()))
                 .setCertificateManager(certificateManager).setTrustListManager(trustListManager)
                 .setCertificateValidator(certificateValidator).setHttpsKeyPair(httpsKeyPair)
                 .setHttpsCertificate(httpsCertificate)
                 .setIdentityValidator(new CompositeValidator(identityValidator, x509IdentityValidator))
-                .setProductUri("urn:eclipse:milo:example-server").build();
+                .setProductUri("urn:arrowhead:opcua-sr-server").build();
 
         server = new OpcUaServer(serverConfig);
 
         ArrowheadOpcUaNamespace exampleNamespace = new ArrowheadOpcUaNamespace(server,
                 "urn:arrowhead:service-registry:namespace");
         exampleNamespace.startup();
-        nodeContext = exampleNamespace.getNodeContext();
+        nodeContext = exampleNamespace.getNamespaceNodeContext();
+        nodeManager = exampleNamespace.getNamespaceNodeManager();
     }
 
     private Set<EndpointConfiguration> createEndpointConfigurations(X509Certificate certificate) {
@@ -137,7 +138,7 @@ public class ArrowheadOpcUaServer {
                 EndpointConfiguration.Builder builder = EndpointConfiguration.newBuilder()
                     .setBindAddress(bindAddress)
                     .setHostname(hostname)
-                    .setPath("/milo")
+                    .setPath("/arrowhead")
                     .setCertificate(certificate)
                     .addTokenPolicies(
                         USER_TOKEN_POLICY_ANONYMOUS,
@@ -178,7 +179,7 @@ public class ArrowheadOpcUaServer {
                  */
 
                 EndpointConfiguration.Builder discoveryBuilder = builder.copy()
-                    .setPath("/milo/discovery")
+                    .setPath("/arrowhead/discovery")
                     .setSecurityPolicy(SecurityPolicy.None)
                     .setSecurityMode(MessageSecurityMode.None);
 

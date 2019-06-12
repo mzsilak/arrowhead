@@ -257,6 +257,7 @@ public class DatabaseManager {
         transaction.rollback();
       }
       log.error("Unknown exception during database save", e);
+      e.printStackTrace();
       throw e;
     }
 
