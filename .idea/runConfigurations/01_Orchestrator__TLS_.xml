@@ -2,8 +2,8 @@
   <configuration default="false" name="01-Orchestrator (TLS)" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="eu.arrowhead.core.orchestrator.OrchestratorMain" />
     <module name="arrowhead-orchestrator" />
-    <option name="PROGRAM_PARAMETERS" value="-tls" />
-    <option name="VM_PARAMETERS" value="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager" />
+    <option name="PROGRAM_PARAMETERS" value="-d -tls" />
+    <option name="VM_PARAMETERS" value="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j.configurationFile=config/log4j2.properties" />
     <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
     <extension name="coverage">
       <pattern>
