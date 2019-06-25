@@ -83,6 +83,33 @@ A full setup guide can be read here: [DEBIAN-INSTALL.md](https://github.com/arro
 
 A guide on how to add new core systems to the package generation: [DEBIAN-DEV.md](https://github.com/arrowhead-f/core-java/blob/develop/documentation/Debian%20Packages/DEBIAN-DEV.md) 
 
+### Windows 10 Install Guide
+
+Install Java JDK 8+ [Download from here](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html)
+Install Maven 3.5+ [Download from here](http://maven.apache.org/download.cgi) | [Install guide](https://www.baeldung.com/install-maven-on-windows-linux-mac)
+Install MySQL Server 5.7+ (other SQL databases can work with Hibernate ORM, but the `common module pom.xml` has to include the appropriate connector 
+dependency to use them)
+
+Verify that you have Java (```java -version```), Maven (```mvn -version```), MySQL installed properly!
+
+
+Install git (see git-scm.com/download/win)
+
+(Use recommended settings, except for terminal emulator use windows default)
+
+Create System variables for ```MAVEN_HOME``` and ```M2_HOME``` pointing to the unzipped binaries e.g. C:\ProgramFiles\apache-maven-3.0.6) Search for “env” and use the edit environmental variables button.
+Set path to include Maven (Click Path and edit. Then add ```%MAVEN_HOME\bin%``` and ```%M2_HOME\bin%```.
+Add MySQL to the path.
+Now checkout this repository, don't forget to select the correct branch!
+
+Edit the config files (the database connection, NOTE also the logging has database connections that need to be entered. Check the WHOLE config files).
+
+Initialize the database by running the db scripts found in the /scripts folder
+
+Run mvn install in the core-java folder. Then execute the created jar file. Wait a few minutes and test that the system is up:
+http://localhost:8440/orchestrator/orchestration
+This should reply “Orchestrator got it!”
+
 ### REST interfaces
 
 Each core system offers [Swagger UI](https://swagger.io/tools/swagger-ui/) to discover its REST interfaces. This UI is available at the `/api/` 
