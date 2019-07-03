@@ -51,7 +51,7 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
   @Path(LOOKUP_PATH)
   @Operation(summary = "Searches a DeviceRegistryEntry by id", responses = {
       @ApiResponse(content = @Content(schema = @Schema(implementation = DeviceRegistryEntry.class)))})
-  public Response lookup(@PathParam("id") final long id) throws ArrowheadException {
+  public Response lookup(@PathParam(LOOKUP_ID) final long id) throws ArrowheadException {
     DeviceRegistryEntry returnValue;
     Response response;
 
