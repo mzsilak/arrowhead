@@ -227,7 +227,7 @@ public class OnboardingService {
         ServiceRequestForm srf =
             new ServiceRequestForm.Builder(consumer).requestedService(arrowheadService).orchestrationFlags(orchestrationFlags).build();
 
-        log.info("Orhcestration srf:" + Utility.toPrettyJson(null, srf));
+        log.info("Orchestration srf:" + Utility.toPrettyJson(null, srf));
 
         return srf;
     }
@@ -254,7 +254,7 @@ public class OnboardingService {
                            orchResponse.getResponse().get(0).getProvider().getPort(),
                            orchResponse.getResponse().get(0).getServiceURI(), true, false);
 
-        log.info(String.format("Retrived service URI from orchestrator: %s", serviceURI));
+        log.info(String.format("Retrieved service URI from orchestrator: %s", serviceURI));
 
 
         return serviceURI;

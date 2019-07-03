@@ -29,6 +29,7 @@ import eu.arrowhead.common.web.ArrowheadCloudApi;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -319,11 +320,26 @@ public class GatekeeperMain implements NeedsCoreSystemService {
     server.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
   }
 
+  private static String getHostAddress(final URI uri)
+  {
+    String address = uri.getHost();
+    if("0.0.0.0".equals(address))
+    {
+      try {
+        address = Utility.getIpAddress();
+      } catch (SocketException e) {
+        // noop
+      }
+    }
+    return address;
+  }
+
   private static void useSRService(boolean registering) {
     final URI uri = UriBuilder.fromUri(OUTBOUND_BASE_URI).build();
     final boolean isSecure = uri.getScheme().equals("https");
     final String interfaceName = isSecure ? "HTTP-SECURE-JSON" : "HTTP-INSECURE-JSON";
-    final ArrowheadSystem gkSystem = new ArrowheadSystem("gatekeeper", uri.getHost(), uri.getPort(), BASE64_PUBLIC_KEY);
+    final ArrowheadSystem gkSystem = new ArrowheadSystem("gatekeeper", getHostAddress(uri), uri.getPort(),
+                                                         BASE64_PUBLIC_KEY);
     ArrowheadService gsdService = new ArrowheadService(Utility.createSD(CoreSystemService.GSD_SERVICE.getServiceDef(), isSecure),
                                                        Collections.singleton(interfaceName), null);
     ArrowheadService icnService = new ArrowheadService(Utility.createSD(CoreSystemService.ICN_SERVICE.getServiceDef(), isSecure),

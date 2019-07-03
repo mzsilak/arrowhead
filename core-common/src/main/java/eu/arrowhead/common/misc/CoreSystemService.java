@@ -18,6 +18,8 @@ public enum CoreSystemService {
   GW_PROVIDER_SERVICE("ConnectToProvider", "gateway/connectToProvider"),
   GW_SESSION_MGMT("SessionManagement", "gateway/management"),
   ORCH_SERVICE("OrchestrationService", "orchestrator/orchestration"),
+  SERVICE_REGISTRY_SERVICE("ServiceRegistry", "serviceregistry/register"),
+  SERVICE_LOOKUP_SERVICE("ServiceLookup", "serviceregistry/query"),
   SYS_REG_SERVICE("PlaceHolder", "systemregistry/placeholder"),
   DEVICE_REG_SERVICE("Placeholder2", "deviceregistry/placeholder"),
   ONBOARDING_SERVICE("Onboarding", "onboarding");

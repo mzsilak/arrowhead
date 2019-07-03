@@ -9,6 +9,7 @@ package eu.arrowhead.core.deviceregistry;
 
 import eu.arrowhead.common.database.DeviceRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.misc.registry_interfaces.RegistryResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,7 +25,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
-import eu.arrowhead.common.RegistryResource;
 
 @Path("deviceregistry")
 @Consumes(MediaType.APPLICATION_JSON)

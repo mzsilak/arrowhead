@@ -11,6 +11,7 @@ import eu.arrowhead.common.DatabaseManager;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.DuplicateEntryException;
 import eu.arrowhead.common.messages.ServiceQueryForm;
 import eu.arrowhead.common.messages.ServiceQueryResult;
@@ -48,6 +49,13 @@ public class ServiceRegistryResource {
   @Path("register")
   public Response registerService(@Valid ServiceRegistryEntry entry) {
     entry.toDatabase();
+
+    ArrowheadSystem provider = entry.getProvider();
+    if("0.0.0.0".equals(provider.getAddress()))
+    {
+      throw new BadPayloadException("0.0.0.0 is not a valid destination IP address");
+    }
+
     restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
     if (service == null) {
@@ -59,10 +67,12 @@ public class ServiceRegistryResource {
     entry.setProvidedService(service);
 
     restrictionMap.clear();
-    restrictionMap.put("systemName", entry.getProvider().getSystemName());
-    restrictionMap.put("address", entry.getProvider().getAddress());
-    restrictionMap.put("port", entry.getProvider().getPort());
-    ArrowheadSystem provider = dm.get(ArrowheadSystem.class, restrictionMap);
+    restrictionMap.put("systemName", provider.getSystemName());
+    restrictionMap.put("address", provider.getAddress());
+    restrictionMap.put("port", provider.getPort());
+    provider = dm.get(ArrowheadSystem.class, restrictionMap);
+
+
     if (provider == null) {
       provider = dm.save(entry.getProvider());
     } else {

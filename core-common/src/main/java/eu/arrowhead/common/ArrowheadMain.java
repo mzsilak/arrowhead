@@ -20,6 +20,7 @@ import eu.arrowhead.common.misc.TypeSafeProperties;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -118,6 +119,12 @@ public abstract class ArrowheadMain {
                             : props
                        .getIntProperty("sr_insecure_port", CoreSystem.SERVICE_REGISTRY_SQL.getInsecurePort());
       srBaseUri = Utility.getUri(srAddress, srPort, "serviceregistry", isSecure, true);
+      Utility.setServiceRegistryUri(srBaseUri);
+      useSRService(true);
+    }
+    else
+    {
+      srBaseUri = Utility.getUri(address, port, "serviceregistry", isSecure, false);
       Utility.setServiceRegistryUri(srBaseUri);
       useSRService(true);
     }
@@ -245,7 +252,18 @@ public abstract class ArrowheadMain {
     final URI uri = UriBuilder.fromUri(baseUri).build();
     final boolean isSecure = uri.getScheme().equals("https");
     final String interfaceName = isSecure ? "HTTP-SECURE-JSON" : "HTTP-INSECURE-JSON";
-    final ArrowheadSystem provider = new ArrowheadSystem(coreSystem.name(), uri.getHost(), uri.getPort(),
+
+    String hostAddress = uri.getHost();
+    if("0.0.0.0".equals(uri.getHost()))
+    {
+      try {
+        hostAddress = Utility.getIpAddress();
+      } catch (SocketException e) {
+        // noop
+      }
+    }
+
+    final ArrowheadSystem provider = new ArrowheadSystem(coreSystem.name(), hostAddress, uri.getPort(),
                                                          base64PublicKey);
 
     for (CoreSystemService service : coreSystem.getServices()) {

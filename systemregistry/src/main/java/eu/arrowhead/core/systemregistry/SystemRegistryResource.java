@@ -9,13 +9,12 @@ package eu.arrowhead.core.systemregistry;
 
 import eu.arrowhead.common.database.SystemRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.misc.registry_interfaces.RegistryResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.apache.log4j.Logger;
-
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -26,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.apache.log4j.Logger;
 
 /**
  * @author FHB
@@ -70,6 +70,11 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     Response response;
 
     logger.info("publish: " + entry);
+
+    if("0.0.0.0".equals(entry.getProvidedSystem().getAddress()))
+    {
+      throw new BadPayloadException("0.0.0.0 is not a valid destination IP address");
+    }
     returnValue = registryService.publish(entry);
     response = Response.status(Status.CREATED).entity(returnValue).build();
 
