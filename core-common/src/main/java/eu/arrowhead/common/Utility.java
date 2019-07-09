@@ -102,7 +102,8 @@ public final class Utility {
 
     Client client;
     if (context != null) {
-      client = ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid).build();
+      client =
+          ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid).build();
     } else {
       client = ClientBuilder.newClient(configuration);
     }

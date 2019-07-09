@@ -10,52 +10,62 @@ package eu.arrowhead.core.orchestrator.filter;
 import eu.arrowhead.common.Utility;
 import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.filter.AccessControlFilter;
+import eu.arrowhead.common.filter.PrincipalSubjectData;
 import eu.arrowhead.common.messages.ServiceRequestForm;
-import eu.arrowhead.common.misc.SecurityUtils;
+import java.net.URI;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class OrchestratorACF extends AccessControlFilter {
 
+  private PrincipalSubjectData sysop;
+  private PrincipalSubjectData gatekeeper;
+
+
+  protected OrchestratorACF(@Context Configuration configuration) {
+    super(configuration);
+    sysop = serverSubject.createWithSuffix("sysop");
+    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
+  }
+
   @Override
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientCN)) {
-      log.info(clientCN + " is not valid common name, access denied!");
-      return false;
+  protected void verifyClientAuthorized(PrincipalSubjectData clientData, String method, URI requestTarget,
+                                        String requestJson) {
+    verifyNotAnonymous(clientData, method, requestTarget);
+
+    final String requestPath = requestTarget.getPath();
+
+    if (requestPath.contains("mgmt")) {
+      //Only the local System Operator can use these methods
+      verifyMatches(clientData, requestTarget, sysop);
+    } else if (requestPath.contains("store")) {
+      // Only requests from the local cloud are allowed
+      if (!serverSubject.getSuffix().equals(clientData.getSubject())) {
+        throwAccessDeniedException(clientData.getCommonName(), method, requestTarget.toString());
+      }
     }
 
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
+    ServiceRequestForm srf = Utility.fromJson(requestJson, ServiceRequestForm.class);
 
-    String[] clientFields = clientCN.split("\\.", 2);
-    if (requestTarget.contains("mgmt")) {
-      // Only the local System Operator can use these methods
-      return clientCN.equalsIgnoreCase("sysop." + serverFields[1]);
-    } else if (requestTarget.contains("store")) {
-      // Only requests from the local cloud are allowed
-      return serverFields[1].equalsIgnoreCase(clientFields[1]);
+    // If this is an external service request, only the local Gatekeeper can send this method
+    if (srf.getOrchestrationFlags().getOrDefault("externalServiceRequest", false)) {
+      verifyMatches(clientData, requestTarget, gatekeeper);
     } else {
-      ServiceRequestForm srf = Utility.fromJson(requestJson, ServiceRequestForm.class);
+      // Otherwise all request from the local cloud are allowed if the consumer name and service name match
+      String consumerName = srf.getRequesterSystem().getSystemName();
 
-      // If this is an external service request, only the local Gatekeeper can send this method
-      if (srf.getOrchestrationFlags().getOrDefault("externalServiceRequest", false)) {
-        return clientFields[0].equalsIgnoreCase("gatekeeper") && serverFields[1].equalsIgnoreCase(clientFields[1]);
-      } else {
-        // Otherwise all request from the local cloud are allowed
-        String consumerName = srf.getRequesterSystem().getSystemName();
-        if (!consumerName.equalsIgnoreCase(clientFields[0]) && !consumerName.replaceAll("_", "").equalsIgnoreCase(clientFields[0])) {
-          // BUT the requester system has to be the same as the first part of the common name
-          log.error("Requester system name and cert common name do not match!");
-          throw new AuthException(
-              "Requester system " + srf.getRequesterSystem().getSystemName() + " and cert common name (" + clientCN + ") do not match!");
-        }
-
-        return serverFields[1].equalsIgnoreCase(clientFields[1]);
+      if (!clientData.getCommonName().equalsIgnoreCase(consumerName) && !clientData.getCommonName().equalsIgnoreCase(
+        consumerName.replaceAll("_", ""))) {
+        log.error("Requester system name and cert common name do not match!");
+        throw new AuthException(
+          "Requester system " + srf.getRequesterSystem().getSystemName() + " and cert common name (" + clientData
+            .getCommonName() + ") do not match!");
       }
     }
   }
-
 }

@@ -11,47 +11,52 @@ import eu.arrowhead.common.Utility;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
 import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.filter.AccessControlFilter;
-import eu.arrowhead.common.misc.SecurityUtils;
+import eu.arrowhead.common.filter.PrincipalSubjectData;
+import eu.arrowhead.common.filter.PrincipalSubjectData.SubjectFields;
+import java.net.URI;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class ServiceRegACF extends AccessControlFilter {
 
-  @Override
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientCN)) {
-      log.info(clientCN + " is not valid common name, access denied!");
-      return false;
-    }
+  private final PrincipalSubjectData gatekeeper;
+  private final PrincipalSubjectData orchestrator;
 
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
-
-    String[] clientFields = clientCN.split("\\.", 2);
-    if (requestTarget.endsWith("register") || requestTarget.endsWith("remove")) {
-      // All requests from the local cloud are allowed
-      ServiceRegistryEntry entry = Utility.fromJson(requestJson, ServiceRegistryEntry.class);
-
-      String providerName = entry.getProvider().getSystemName().replaceAll("_", "");
-      if (!providerName.equalsIgnoreCase(clientFields[0])) {
-        // BUT a provider system can only register/remove its own services!
-        log.error("Provider system name and cert common name do not match! SR registering/removing denied!");
-        throw new AuthException("Provider system " + entry.getProvider().getSystemName() + " and cert common name (" + clientCN + ") do not match!");
-      }
-      return serverFields[1].equalsIgnoreCase(clientFields[1]);
-    } else if (requestTarget.endsWith("query")) {
-      // Only requests from the Orchestrator and Gatekeeper are allowed
-      return clientCN.equalsIgnoreCase("orchestrator." + serverFields[1]) || clientCN.equalsIgnoreCase("gatekeeper." + serverFields[1]);
-    } //maps legacy register and remove functions, if-else order is important
-    else if (method.equals("POST") || method.equals("PUT")) {
-      // All requests from the local cloud are allowed, so omit the first part of the common names (systemName)
-      return serverFields[1].equalsIgnoreCase(clientFields[1]);
-    }
-
-    return false;
+  public ServiceRegACF(@Context Configuration configuration) {
+    super(configuration);
+    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
+    orchestrator = serverSubject.createWithSuffix("orchestrator");
   }
 
+  @Override
+  protected void verifyClientAuthorized(PrincipalSubjectData clientSubject, String method, URI requestTarget,
+                                        String requestJson) {
+
+    final String path = requestTarget.getPath();
+
+    if(path.endsWith("query"))
+    {
+      verifyMatches(clientSubject, requestTarget, gatekeeper, orchestrator);
+    }
+    else if(path.endsWith("register") || path.endsWith("remove"))
+    {
+      // may only register/remove its own service
+      ServiceRegistryEntry entry = Utility.fromJson(requestJson, ServiceRegistryEntry.class);
+      String providerName = entry.getProvider().getSystemName().replaceAll("_", "");
+      if (!providerName.equalsIgnoreCase(clientSubject.getCommonName())) {
+        log.error("Provider system name and cert common name do not match! SR registering/removing denied!");
+        throw new AuthException("Provider system " + entry.getProvider().getSystemName() + " and cert common name (" + clientSubject.getCommonName() + ") do not match!");
+      }
+    }
+    // All requests from the local cloud are allowed
+    else if(!clientSubject.equals(serverSubject, SubjectFields.ARROWHEAD, SubjectFields.OPERATOR, SubjectFields.CLOUD_NAME))
+    {
+      throwAccessDeniedException(clientSubject.getCommonName(), method, requestTarget.toString());
+    }
+  }
 }

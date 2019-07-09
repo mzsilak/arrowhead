@@ -8,37 +8,49 @@
 package eu.arrowhead.core.gatekeeper.filter;
 
 import eu.arrowhead.common.filter.AccessControlFilter;
-import eu.arrowhead.common.misc.SecurityUtils;
+import eu.arrowhead.common.filter.PrincipalSubjectData;
+import eu.arrowhead.common.filter.PrincipalSubjectData.SubjectFields;
+import java.net.URI;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class GatekeeperACF extends AccessControlFilter {
 
+  private PrincipalSubjectData sysop;
+  private PrincipalSubjectData orchestrator;
+
+  public GatekeeperACF(@Context Configuration configuration)
+  {
+    super(configuration);
+    sysop = serverSubject.createWithSuffix("sysop");
+    orchestrator = serverSubject.createWithSuffix("orchestrator");
+  }
+
   @Override
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientCN) && !SecurityUtils.isTrustStoreCNArrowheadValid(clientCN)) {
-      log.info(clientCN + " is not valid common name, access denied!");
-      return false;
-    }
+  protected void verifyClientAuthorized(PrincipalSubjectData clientData, String method, URI requestTarget,
+                                        String requestJson) {
+    verifyNotAnonymous(clientData, method, requestTarget);
 
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
+    final String requestPath = requestTarget.getPath();
 
-    if (requestTarget.contains("mgmt")) {
+    if (requestPath.contains("mgmt")) {
       //Only the local System Operator can use these methods
-      return clientCN.equalsIgnoreCase("sysop." + serverFields[1]);
-    } else {
-      if (requestTarget.endsWith("init_gsd") || requestTarget.endsWith("init_icn")) {
-        // Only requests from the local Orchestrator are allowed
-        return clientCN.equalsIgnoreCase("orchestrator." + serverFields[1]);
-      } else {
-        // Only requests from other Gatekeepers are allowed
-        return SecurityUtils.isTrustStoreCNArrowheadValid(clientCN);
+      verifyMatches(clientData, requestTarget, sysop);
+    } else if (requestPath.endsWith("init_gsd") || requestPath.endsWith("init_icn")) {
+      // Only requests from the local Orchestrator are allowed
+      verifyMatches(clientData, requestTarget, orchestrator);
+    }
+    else {
+      // Only requests from other Gatekeepers are allowed
+      if(!clientData.equals(serverSubject, SubjectFields.COMMON_NAME, SubjectFields.ARROWHEAD))
+      {
+        throwAccessDeniedException(clientData.getCommonName(), method, requestTarget.toString());
       }
     }
   }
-
 }

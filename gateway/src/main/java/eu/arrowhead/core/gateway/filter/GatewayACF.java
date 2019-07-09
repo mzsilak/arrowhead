@@ -8,32 +8,39 @@
 package eu.arrowhead.core.gateway.filter;
 
 import eu.arrowhead.common.filter.AccessControlFilter;
-import eu.arrowhead.common.misc.SecurityUtils;
+import eu.arrowhead.common.filter.PrincipalSubjectData;
+import java.net.URI;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class GatewayACF extends AccessControlFilter {
 
-  @Override
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientCN)) {
-      log.info(clientCN + " is not valid common name, access denied!");
-      return false;
-    }
+  private PrincipalSubjectData sysop;
+  private PrincipalSubjectData gatekeeper;
 
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
-
-    if (requestTarget.contains("mgmt")) {
-      // Only the local System Operator can use the API methods
-      return clientCN.equalsIgnoreCase("sysop." + serverFields[1]);
-    } else {
-      // Only the local Gatekeeper can use the resource methods
-      return clientCN.equalsIgnoreCase("gatekeeper." + serverFields[1]);
-    }
+  protected GatewayACF(@Context Configuration configuration)
+  {
+    super(configuration);
+    sysop = serverSubject.createWithSuffix("sysop");
+    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
   }
+  @Override
+  protected void verifyClientAuthorized(PrincipalSubjectData clientData, String method, URI requestTarget,
+                                        String requestJson) {
+    verifyNotAnonymous(clientData, method, requestTarget);
 
+    final String requestPath = requestTarget.getPath();
+
+    if (requestPath.contains("mgmt")) {
+      //Only the local System Operator can use these methods
+      verifyMatches(clientData, requestTarget, sysop);
+    }
+
+    verifyMatches(clientData, requestTarget, gatekeeper);
+  }
 }

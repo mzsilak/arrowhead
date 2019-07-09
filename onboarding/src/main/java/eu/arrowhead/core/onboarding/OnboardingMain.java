@@ -15,6 +15,8 @@ public class OnboardingMain extends ArrowheadMain {
   private OnboardingMain(String[] args) {
     String[] packages = {"eu.arrowhead.common.exception", "eu.arrowhead.common.json", "eu.arrowhead.common.filter",
         "eu.arrowhead.core.onboarding"};
+
+    setRequestClientCertificate(false);
     init(CoreSystem.ONBOARDING, args, null, packages);
 
     listenForInput();

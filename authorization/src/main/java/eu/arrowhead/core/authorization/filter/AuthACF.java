@@ -8,39 +8,67 @@
 package eu.arrowhead.core.authorization.filter;
 
 import eu.arrowhead.common.filter.AccessControlFilter;
-import eu.arrowhead.common.misc.SecurityUtils;
+import eu.arrowhead.common.filter.PrincipalSubjectData;
 import eu.arrowhead.core.authorization.AuthorizationMain;
+import java.net.URI;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class AuthACF extends AccessControlFilter {
 
+  private PrincipalSubjectData sysop;
+  private PrincipalSubjectData orchestrator;
+  private PrincipalSubjectData gatekeeper;
+  private PrincipalSubjectData certificateAuthority;
+
+  public AuthACF(@Context Configuration configuration)
+  {
+    super(configuration);
+    sysop = serverSubject.createWithSuffix("sysop");
+    orchestrator = serverSubject.createWithSuffix("orchestrator");
+    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
+    certificateAuthority = serverSubject.createWithSuffix("certificate_authority");
+  }
+
   @Override
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientCN)) {
-      log.info(clientCN + " is not valid common name, access denied!");
-      return false;
-    }
+  protected void verifyClientAuthorized(PrincipalSubjectData clientData, String method, URI requestTarget,
+                                        String requestJson) {
+    verifyNotAnonymous(clientData, method, requestTarget);
 
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
+    final String requestPath = requestTarget.getPath();
 
-    if (AuthorizationMain.enableAuthForCloud) {
-      if (!requestTarget.contains("mgmt") || (requestTarget.endsWith("intracloud") && method.equalsIgnoreCase("post"))) {
-        String[] clientFields = clientCN.split("\\.", 2);
-        return serverFields[1].equalsIgnoreCase(clientFields[1]);
-      } else {
-        return clientCN.equalsIgnoreCase("sysop." + serverFields[1]);
-      }
+    if (requestPath.contains("mgmt")) {
+      //Only the local System Operator can use these methods
+      verifyMgmtAccess(clientData, method, requestTarget);
+    } else if (AuthorizationMain.enableAuthForCloud && requestPath.endsWith("intracloud")) {
+      verifyIntracloudAccess(clientData, method, requestTarget);
     } else {
-      if (requestTarget.contains("mgmt")) {
-        return clientCN.equalsIgnoreCase("sysop." + serverFields[1]) || (clientCN.equalsIgnoreCase("certificate_authority." + serverFields[1])
-            && requestTarget.endsWith("publickey") && method.equalsIgnoreCase("get"));
-      } else {
-        return clientCN.equalsIgnoreCase("orchestrator." + serverFields[1]) || clientCN.equalsIgnoreCase("gatekeeper." + serverFields[1]);
+      verifyAuthorizedSystems(clientData, method, requestTarget);
+    }
+  }
+
+  private void verifyAuthorizedSystems(PrincipalSubjectData clientData, String method, URI requestTarget) {
+    verifyMatches(clientData, requestTarget, orchestrator, gatekeeper);
+  }
+
+  private void verifyIntracloudAccess(PrincipalSubjectData clientData, String method, URI requestTarget) {
+    final String requestPath = requestTarget.getPath();
+    if (!(requestPath.endsWith("intracloud") && method.equalsIgnoreCase("POST"))) {
+      throwAccessDeniedException(clientData.getCommonName(), method, requestPath);
+    }
+  }
+
+  private void verifyMgmtAccess(PrincipalSubjectData clientData, String method, URI requestTarget) {
+    verifyMatches(clientData, requestTarget, sysop, certificateAuthority);
+
+    if (clientData.equals(certificateAuthority)) {
+      if (!(requestTarget.getPath().endsWith("publickey") && method.equalsIgnoreCase("GET"))) {
+        throwAccessDeniedException(clientData.getCommonName(), method, requestTarget.getPath());
       }
     }
   }

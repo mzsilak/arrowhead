@@ -53,10 +53,13 @@ public abstract class ArrowheadMain {
   public static final List<String> certFields = Collections
       .unmodifiableList(Arrays.asList("keystore", "keystorepass", "keypass", "truststore", "truststorepass"));
   public static final Map<String, String> secureServerMetadata = Collections.singletonMap("security", "certificate");
+  public static final String SWAGGER_PATH = "/api";
+  public static final String OPENAPI_PATH = "/openapi.json";
 
   protected String srBaseUri;
   protected final TypeSafeProperties props = Utility.getProp();
 
+  private boolean requestClientCertificate = true;
   private boolean daemon = false;
   private CoreSystem coreSystem;
   private HttpServer server;
@@ -214,9 +217,10 @@ public abstract class ArrowheadMain {
 
     URI uri = UriBuilder.fromUri(baseUri).build();
     try {
+      // instead of "need" we only "want" a client certificate. we will verify the certificate in the filter
       server = GrizzlyHttpServerFactory.createHttpServer(uri, config, true,
                                                          new SSLEngineConfigurator(sslCon).setClientMode(false)
-                                                                                          .setNeedClientAuth(true),
+                                                                                          .setWantClientAuth(requestClientCertificate),
                                                          false);
       configureServer(server);
       server.start();
@@ -231,7 +235,7 @@ public abstract class ArrowheadMain {
   private void configureServer(HttpServer server) {
     //Add swagger UI to the server
     final HttpHandler httpHandler = new CLStaticHttpHandler(HttpServer.class.getClassLoader(), "/swagger/");
-    server.getServerConfiguration().addHttpHandler(httpHandler, "/api");
+    server.getServerConfiguration().addHttpHandler(httpHandler, SWAGGER_PATH);
     //Allow message payload for GET and DELETE requests - ONLY to provide custom error message for them
     server.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
   }
@@ -304,6 +308,11 @@ public abstract class ArrowheadMain {
         Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT", srEntry);
       }
     }
+  }
+
+  protected void setRequestClientCertificate(final boolean requestClientCertificate)
+  {
+    this.requestClientCertificate = requestClientCertificate;
   }
 
   private String[] addSwaggerToPackages(String[] packages) {
