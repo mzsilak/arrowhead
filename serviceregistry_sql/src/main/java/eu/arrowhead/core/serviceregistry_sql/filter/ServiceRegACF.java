@@ -26,12 +26,14 @@ public class ServiceRegACF extends AccessControlFilter {
 
   private PrincipalSubjectData gatekeeper;
   private PrincipalSubjectData orchestrator;
+  private PrincipalSubjectData certificateAuthority;
 
   public ServiceRegACF(@Context Configuration configuration)
   {
     super(configuration);
     gatekeeper = serverSubject.createWithSuffix("gatekeeper");
     orchestrator = serverSubject.createWithSuffix("orchestrator");
+    certificateAuthority = serverSubject.createWithSuffix("certificateauthority");
   }
 
   @Override
@@ -42,7 +44,7 @@ public class ServiceRegACF extends AccessControlFilter {
 
     if(path.endsWith("query"))
     {
-      verifyMatches(clientSubject, requestTarget, gatekeeper, orchestrator);
+      verifyMatches(clientSubject, requestTarget, gatekeeper, orchestrator, certificateAuthority);
     }
     else if(path.endsWith("register") || path.endsWith("remove"))
     {

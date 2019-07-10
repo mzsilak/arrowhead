@@ -32,7 +32,7 @@ public class AuthACF extends AccessControlFilter {
     sysop = serverSubject.createWithSuffix("sysop");
     orchestrator = serverSubject.createWithSuffix("orchestrator");
     gatekeeper = serverSubject.createWithSuffix("gatekeeper");
-    certificateAuthority = serverSubject.createWithSuffix("certificate_authority");
+    certificateAuthority = serverSubject.createWithSuffix("certificateauthority");
   }
 
   @Override

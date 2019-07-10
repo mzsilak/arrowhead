@@ -41,16 +41,14 @@ public class PrincipalSubjectData {
   private final boolean present;
   private final Map<SubjectFields, String> subjectMap = new HashMap<>();
 
-  public PrincipalSubjectData(final Principal principal)
-  {
+  public PrincipalSubjectData(final Principal principal) {
     this(SecurityUtils.getCertCNFromSubject(principal.getName()));
   }
 
   public PrincipalSubjectData(final String subject) {
 
     present = subject != null;
-    if(!present)
-    {
+    if (!present) {
       return;
     }
 
@@ -58,10 +56,18 @@ public class PrincipalSubjectData {
 
     subjectMap.put(SubjectFields.FULL_NAME, subject);
 
-    if(fields.length > 0) subjectMap.put(SubjectFields.COMMON_NAME, fields[0]);
-    if(fields.length > 1) subjectMap.put(SubjectFields.CLOUD_NAME, fields[1]);
-    if(fields.length > 2) subjectMap.put(SubjectFields.OPERATOR, fields[2]);
-    if(fields.length > 3) subjectMap.put(SubjectFields.ARROWHEAD, fields[3]);
+    if (fields.length > 0) {
+      subjectMap.put(SubjectFields.COMMON_NAME, fields[0]);
+    }
+    if (fields.length > 1) {
+      subjectMap.put(SubjectFields.CLOUD_NAME, fields[1]);
+    }
+    if (fields.length > 2) {
+      subjectMap.put(SubjectFields.OPERATOR, fields[2]);
+    }
+    if (fields.length > 3) {
+      subjectMap.put(SubjectFields.ARROWHEAD, fields[3]);
+    }
 
     fields = subject.split("\\.", 2);
     subjectMap.put(SubjectFields.SUFFIX, fields[1]);
@@ -104,14 +110,11 @@ public class PrincipalSubjectData {
     return thisValue.equals(fragment.getValue());
   }
 
-
-  public boolean equals(final PrincipalSubjectData other)
-  {
+  public boolean equals(final PrincipalSubjectData other) {
     return this.getSubject().equals(other.getSubject());
   }
 
-  public PrincipalSubjectData createWithSuffix(final String commonName)
-  {
+  public PrincipalSubjectData createWithSuffix(final String commonName) {
     PrincipalSubjectData data = new PrincipalSubjectData(getSubject());
     data.subjectMap.put(SubjectFields.COMMON_NAME, commonName);
     data.subjectMap.put(SubjectFields.FULL_NAME, commonName + "." + getSuffix());
