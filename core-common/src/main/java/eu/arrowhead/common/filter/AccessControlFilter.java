@@ -48,10 +48,10 @@ public abstract class AccessControlFilter implements ContainerRequestFilter {
       final String requestJson;
 
       principal = sc.getUserPrincipal();
-      clientSubject = new PrincipalSubjectData(principal);
       requestTarget = requestContext.getUriInfo().getRequestUri();
 
       if (!isWhitelistedURI(requestTarget)) {
+        clientSubject = new PrincipalSubjectData(principal);
         requestJson = Utility.getRequestPayload(requestContext.getEntityStream());
         verifyClientAuthorized(clientSubject, requestContext.getMethod(), requestTarget, requestJson);
         requestContext.setEntityStream(new ByteArrayInputStream(requestJson.getBytes(StandardCharsets.UTF_8)));
