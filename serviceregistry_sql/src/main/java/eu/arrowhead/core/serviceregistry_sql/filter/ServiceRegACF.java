@@ -27,6 +27,7 @@ public class ServiceRegACF extends AccessControlFilter {
   private PrincipalSubjectData gatekeeper;
   private PrincipalSubjectData orchestrator;
   private PrincipalSubjectData certificateAuthority;
+  private PrincipalSubjectData onboardingController;
 
   public ServiceRegACF(@Context Configuration configuration)
   {
@@ -34,6 +35,7 @@ public class ServiceRegACF extends AccessControlFilter {
     gatekeeper = serverSubject.createWithSuffix("gatekeeper");
     orchestrator = serverSubject.createWithSuffix("orchestrator");
     certificateAuthority = serverSubject.createWithSuffix("certificateauthority");
+    onboardingController = serverSubject.createWithSuffix("onboarding");
   }
 
   @Override
@@ -44,7 +46,7 @@ public class ServiceRegACF extends AccessControlFilter {
 
     if(path.endsWith("query"))
     {
-      verifyMatches(clientSubject, requestTarget, gatekeeper, orchestrator, certificateAuthority);
+      verifyMatches(clientSubject, requestTarget, gatekeeper, orchestrator, certificateAuthority, onboardingController);
     }
     else if(path.endsWith("register") || path.endsWith("remove"))
     {

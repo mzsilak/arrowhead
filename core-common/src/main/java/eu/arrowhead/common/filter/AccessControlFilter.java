@@ -98,7 +98,7 @@ public abstract class AccessControlFilter implements ContainerRequestFilter {
   }
 
   protected void throwAccessDeniedException(final String user, final String method, final String url) throws AuthException {
-    final String message = String.format("''%s'' is unauthorized to access %s''%s''", user, method, url);
+    final String message = String.format("\"%s\" is unauthorized to access %s\"%s\"", user, method, url);
     throwAuthException(message);
   }
   protected void throwAuthException(final String message) throws AuthException {

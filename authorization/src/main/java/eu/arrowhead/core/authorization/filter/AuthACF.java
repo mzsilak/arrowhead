@@ -25,6 +25,7 @@ public class AuthACF extends AccessControlFilter {
   private PrincipalSubjectData orchestrator;
   private PrincipalSubjectData gatekeeper;
   private PrincipalSubjectData certificateAuthority;
+  private PrincipalSubjectData onboardingController;
 
   public AuthACF(@Context Configuration configuration)
   {
@@ -33,6 +34,7 @@ public class AuthACF extends AccessControlFilter {
     orchestrator = serverSubject.createWithSuffix("orchestrator");
     gatekeeper = serverSubject.createWithSuffix("gatekeeper");
     certificateAuthority = serverSubject.createWithSuffix("certificateauthority");
+    onboardingController = serverSubject.createWithSuffix("onboarding");
   }
 
   @Override
@@ -64,7 +66,7 @@ public class AuthACF extends AccessControlFilter {
   }
 
   private void verifyMgmtAccess(PrincipalSubjectData clientData, String method, URI requestTarget) {
-    verifyMatches(clientData, requestTarget, sysop, certificateAuthority);
+    verifyMatches(clientData, requestTarget, sysop, certificateAuthority, onboardingController);
 
     if (clientData.equals(certificateAuthority)) {
       if (!(requestTarget.getPath().endsWith("publickey") && method.equalsIgnoreCase("GET"))) {

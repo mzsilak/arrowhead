@@ -10,7 +10,12 @@ package eu.arrowhead.core.onboarding;
 import eu.arrowhead.common.Utility;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
+import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.messages.OrchestrationResponse;
+import eu.arrowhead.common.messages.ServiceQueryForm;
+import eu.arrowhead.common.messages.ServiceQueryResult;
 import eu.arrowhead.common.messages.ServiceRequestForm;
 import eu.arrowhead.common.misc.CoreSystem;
 import eu.arrowhead.common.misc.CoreSystemService;
@@ -19,6 +24,7 @@ import eu.arrowhead.core.certificate_authority.model.CertificateSigningRequest;
 import eu.arrowhead.core.certificate_authority.model.CertificateSigningResponse;
 import eu.arrowhead.core.onboarding.model.ServiceEndpoint;
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyPair;
@@ -31,8 +37,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status.Family;
+import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -40,158 +48,177 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
-import org.apache.log4j.Logger;
 
 public class OnboardingService {
 
-    // TODO CA does not expose a service ?!
-    private static final String PROPERTY_CA_IP = "ca_url";
-    private static final String PROPERTY_UNKNOWN_ENABLED = "enable_unknown";
-    private static final String PROPERTY_SHARED_KEY_ENABLED = "enable_shared_key";
-    private static final String PROPERTY_CERTIFICATE_ENABLED = "enable_certificate";
-    private static final String PROPERTY_SHARED_KEY = "shared_key";
+  // TODO CA does not expose a service ?!
+  private static final String PROPERTY_SR_IP = "sr_address";
+  private static final String PROPERTY_CA_IP = "ca_address";
+  private static final String PROPERTY_UNKNOWN_ENABLED = "enable_unknown";
+  private static final String PROPERTY_SHARED_KEY_ENABLED = "enable_shared_key";
+  private static final String PROPERTY_CERTIFICATE_ENABLED = "enable_certificate";
+  private static final String PROPERTY_SHARED_KEY = "shared_key";
 
-    private final TypeSafeProperties props;
-    private final String caUri;
+  private final TypeSafeProperties props;
+  private String caBaseUri;
+  private String srBaseUri;
 
-    private final Logger log = Logger.getLogger(OnboardingService.class.getName());
+  private final Logger log = Logger.getLogger(OnboardingService.class.getName());
 
-    public OnboardingService() {
-        props = Utility.getProp();
-//        caUri = Utility.getUri(getCaIp(), CoreSystem.CERTIFICATE_AUTHORITY.getInsecurePort(), "ca", false, false);
-        caUri = Utility.getUri(getCaIp(), CoreSystem.CERTIFICATE_AUTHORITY.getSecurePort(), "ca", true, false);
-    }
+  public OnboardingService() {
+    props = Utility.getProp();
+//        caBaseUri = Utility.getUri(getCaIp(), CoreSystem.CERTIFICATE_AUTHORITY.getInsecurePort(), "ca", false, false);
+    caBaseUri = Utility.getUri(getCaIp(), CoreSystem.CERTIFICATE_AUTHORITY.getSecurePort(), "ca", true, false);
+    srBaseUri = Utility.getUri(getSrIp(), CoreSystem.SERVICE_REGISTRY_SQL.getSecurePort(),
+                               CoreSystemService.SERVICE_LOOKUP_SERVICE.getServiceURI(), true, false);
+  }
 
-    public String getCaIp() {
-        return props.getProperty(PROPERTY_CA_IP, "127.0.0.1");
-    }
+  private String getCaIp() {
+    return props.getProperty(PROPERTY_CA_IP, "127.0.0.1");
+  }
 
-    public boolean isUnknownAllowed() {
-        return props.getBooleanProperty(PROPERTY_UNKNOWN_ENABLED, false);
-    }
+  private String getSrIp() {
+    return props.getProperty(PROPERTY_SR_IP, "127.0.0.1");
+  }
 
-    public boolean isSharedKeyAllowed() {
-        return props.getBooleanProperty(PROPERTY_SHARED_KEY_ENABLED, false);
-    }
+  public boolean isUnknownAllowed() {
+    return props.getBooleanProperty(PROPERTY_UNKNOWN_ENABLED, false);
+  }
 
-    public boolean isCertificateAllowed() {
-        return props.getBooleanProperty(PROPERTY_CERTIFICATE_ENABLED, true);
-    }
+  public boolean isSharedKeyAllowed() {
+    return props.getBooleanProperty(PROPERTY_SHARED_KEY_ENABLED, false);
+  }
 
-    public KeyPair generateKeyPair(final String algorithm, int keySize) throws NoSuchAlgorithmException {
-        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm);
-        keyPairGenerator.initialize(keySize, new SecureRandom());
-        return keyPairGenerator.generateKeyPair();
-    }
+  public boolean isCertificateAllowed() {
+    return props.getBooleanProperty(PROPERTY_CERTIFICATE_ENABLED, true);
+  }
 
-    public CertificateSigningResponse createAndSignCertificate(final String name, final KeyPair keyPair)
-        throws IOException, OperatorCreationException {
-        final String cloudName = getCloudname(caUri);
-        final String encodedCert = prepareAndCreateCSR(name + "." + cloudName, keyPair);
-        return sendCsr(new CertificateSigningRequest(encodedCert));
-    }
+  public KeyPair generateKeyPair(final String algorithm, int keySize) throws NoSuchAlgorithmException {
+    final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm);
+    keyPairGenerator.initialize(keySize, new SecureRandom());
+    return keyPairGenerator.generateKeyPair();
+  }
 
-    private String getCloudname(final String caUri) {
-        Response caResponse = Utility.sendRequest(caUri, "GET", null);
-        return caResponse.readEntity(String.class);
-    }
+  public CertificateSigningResponse createAndSignCertificate(final String name, final KeyPair keyPair)
+    throws IOException, OperatorCreationException {
+    final String cloudName = getCloudname(caBaseUri);
+    final String encodedCert = prepareAndCreateCSR(name + "." + cloudName, keyPair);
+    return sendCsr(new CertificateSigningRequest(encodedCert));
+  }
 
-    private String prepareAndCreateCSR(final String name, final KeyPair keyPair)
-        throws IOException, OperatorCreationException {
+  private String getCloudname(final String caUri) {
+    Response caResponse = Utility.sendRequest(caUri, "GET", null);
+    return caResponse.readEntity(String.class);
+  }
 
-        final X500Name x500Name = new X500Name("CN=" + name);
-        final JcaPKCS10CertificationRequestBuilder builder = new JcaPKCS10CertificationRequestBuilder(x500Name, keyPair.getPublic());
-        final JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256WithRSA");
-        final ContentSigner contentSigner = contentSignerBuilder.build(keyPair.getPrivate());
-        final PKCS10CertificationRequest csr = builder.build(contentSigner);
-        return Base64.getEncoder().encodeToString(csr.getEncoded());
-    }
+  private String prepareAndCreateCSR(final String name, final KeyPair keyPair)
+    throws IOException, OperatorCreationException {
 
-    private CertificateSigningResponse sendCsr(final CertificateSigningRequest csr) {
-        log.info("sending csr to CA (POST)...");
-        final Response caResponse = Utility.sendRequest(caUri, "POST", csr);
-        return caResponse.readEntity(CertificateSigningResponse.class);
-    }
+    final X500Name x500Name = new X500Name("CN=" + name);
+    final JcaPKCS10CertificationRequestBuilder builder = new JcaPKCS10CertificationRequestBuilder(x500Name,
+                                                                                                  keyPair.getPublic());
+    final JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256WithRSA");
+    final ContentSigner contentSigner = contentSignerBuilder.build(keyPair.getPrivate());
+    final PKCS10CertificationRequest csr = builder.build(contentSigner);
+    return Base64.getEncoder().encodeToString(csr.getEncoded());
+  }
 
-    public CertificateSigningResponse signCertificate(final JcaPKCS10CertificationRequest providedCsr)
-        throws IOException {
-        final String encodedCert = Base64.getEncoder().encodeToString(providedCsr.getEncoded());
-        return sendCsr(new CertificateSigningRequest(encodedCert));
-    }
+  private CertificateSigningResponse sendCsr(final CertificateSigningRequest csr) {
+    log.info("sending csr to CA (POST)...");
+    final Response caResponse = Utility.sendRequest(caBaseUri, "POST", csr);
+    return caResponse.readEntity(CertificateSigningResponse.class);
+  }
 
-    public ServiceEndpoint[] getEndpoints() throws URISyntaxException {
+  public CertificateSigningResponse signCertificate(final JcaPKCS10CertificationRequest providedCsr)
+    throws IOException {
+    final String encodedCert = Base64.getEncoder().encodeToString(providedCsr.getEncoded());
+    return sendCsr(new CertificateSigningRequest(encodedCert));
+  }
 
-        log.info("Getting publish service endpoints of device registry and system registry...");
+  public ServiceEndpoint[] getEndpoints() throws URISyntaxException {
+    // first we need the endpoint of the orchestration service
 
-        final String orchServiceURI = CoreSystemService.ORCH_SERVICE.getServiceURI();
-        final String orcServiceDef = CoreSystemService.ORCH_SERVICE.getServiceDef();
+    //You can put any additional metadata you look for in a Service here (key-value pairs)
+    final Map<String, String> metadata = new HashMap<>();
+    metadata.put("security", "certificate");
 
-        log.info(String.format("Resolved orchestrator service uri %s, def: %s", orchServiceURI, orcServiceDef));
+    final Set<String> interfaces = Collections.singleton("HTTP-SECURE-JSON");
 
-        log.info(String.format("Orch service number: %d", CoreSystem.ORCHESTRATOR.getServices().size()));
+    log.info("Getting publish service endpoints of orchestration service...");
+    final ArrowheadService orchestration = compileService(CoreSystemService.ORCH_SERVICE, interfaces, metadata);
+    final ServiceRegistryEntry orchSRE = sendServiceLookupRequest(orchestration);
 
-        final ServiceEndpoint sepOrch = new ServiceEndpoint(CoreSystem.ORCHESTRATOR, new URI(orchServiceURI));
+    final String orchServiceFullURI = Utility
+      .getUri(orchSRE.getProvider().getAddress(), orchSRE.getProvider().getPort(), orchSRE.getServiceURI(), true,
+              false);
 
-        log.info(String.format("Orch service ep: %s", sepOrch.getUri().toString()));
+    log.info(String.format("Orch service full URI: %s", orchServiceFullURI));
 
-        final String orchServiceFullURI = Utility.getUri("0.0.0.0", CoreSystem.ORCHESTRATOR.getSecurePort(), orchServiceURI, true, false);
-
-        log.info(String.format("Orch service full URI: %s", orchServiceFullURI));
-
-        //You can put any additional metadata you look for in a Service here (key-value pairs)
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("security", "certificate");
 
         /*
       ArrowheadService: serviceDefinition (name), interfaces, metadata
-      Interfaces: supported message formats (e.g. JSON, XML, JSON-SenML), a potential provider has to have at least 1 match,
+      Interfaces: supported message formats (e.g. JSON, XML, JSON-SenML), a potential provider has to have at least 1
+       match,
       so the communication between consumer and provider can be facilitated.
      */
-        ArrowheadService servDevReg = new ArrowheadService(Utility.createSD(CoreSystemService.DEVICE_REG_SERVICE.getServiceDef(), true), Collections
-            .singleton("HTTP-SECURE-JSON"), metadata);
 
-        ArrowheadService servSysReg =
-            new ArrowheadService(Utility.createSD(CoreSystemService.SYS_REG_SERVICE.getServiceDef(), true), Collections
-            .singleton("HTTP-SECURE-JSON"), metadata);
+    log.info("Getting publish service endpoints of registries...");
 
-        //Some of the orchestrationFlags the consumer can use, to influence the orchestration process
+    ArrowheadService servDevReg = compileService(CoreSystemService.DEVICE_REG_SERVICE, interfaces, metadata);
+    ArrowheadService servSysReg = compileService(CoreSystemService.SYS_REG_SERVICE, interfaces, metadata);
+    ArrowheadService servSerReg = compileService(CoreSystemService.SERVICE_LOOKUP_SERVICE, interfaces, metadata);
 
-        Map<String, Boolean> orchestrationFlags = new HashMap<>();
-        orchestrationFlags.put("overrideStore", true);
+    //Some of the orchestrationFlags the consumer can use, to influence the orchestration process
+    final Map<String, Boolean> orchestrationFlags = new HashMap<>();
+    orchestrationFlags.put("overrideStore", true);
 
-        final ServiceRequestForm devRegSRF = compileSRF(servDevReg, orchestrationFlags);
-        final ServiceRequestForm sysRegSRF = compileSRF(servSysReg, orchestrationFlags);
+    final ServiceRequestForm devRegSRF = compileSRF(servDevReg, orchestrationFlags);
+    final ServiceRequestForm sysRegSRF = compileSRF(servSysReg, orchestrationFlags);
+    final ServiceRequestForm serRegSRF = compileSRF(servSerReg, orchestrationFlags);
 
-        log.info("sending orchestration requests (devreg and sysreg services)...");
+    log.info("sending orchestration requests (devreg, sysreg and serreg services)...");
 
-        String devregServiceURI = sendOrchestrationRequest(orchServiceFullURI, devRegSRF);
-        String sysregServiceURI = sendOrchestrationRequest(orchServiceFullURI, sysRegSRF);
+    String devregServiceURI = sendOrchestrationRequest(orchServiceFullURI, devRegSRF, false);
+    String sysregServiceURI = sendOrchestrationRequest(orchServiceFullURI, sysRegSRF, false);
+    String serregServiceURI = sendOrchestrationRequest(orchServiceFullURI, serRegSRF, true);
 
+    log.info(String.format("dev reg service endpoint: %s", devregServiceURI));
+    log.info(String.format("sys reg service endpoint: %s", sysregServiceURI));
+    log.info(String.format("ser reg service endpoint: %s", serregServiceURI));
 
-        log.info(String.format("dev reg service endpoint: %s", devregServiceURI));
-        log.info(String.format("sys reg service endpoint: %s", sysregServiceURI));
+    final List<ServiceEndpoint> endpoints = new ArrayList<>();
 
-        final List<ServiceEndpoint> endpoints = new ArrayList<>();
+    if(devregServiceURI != null)
+    endpoints.add(new ServiceEndpoint(CoreSystem.DEVICE_REGISTRY, new URI(devregServiceURI)));
 
-        endpoints.add(new ServiceEndpoint(CoreSystem.DEVICE_REGISTRY, new URI(devregServiceURI)));
-        endpoints.add(new ServiceEndpoint(CoreSystem.SYSTEM_REGISTRY, new URI(sysregServiceURI)));
+    if(sysregServiceURI != null)
+    endpoints.add(new ServiceEndpoint(CoreSystem.SYSTEM_REGISTRY, new URI(sysregServiceURI)));
 
-        return endpoints.toArray(new ServiceEndpoint[0]);
+    if(serregServiceURI != null)
+    endpoints.add(new ServiceEndpoint(CoreSystem.SERVICE_REGISTRY_SQL, new URI(serregServiceURI)));
 
+    return endpoints.toArray(new ServiceEndpoint[0]);
+  }
+
+  private ArrowheadService compileService(final CoreSystemService service, final Set<String> interfaces,
+                                          final Map<String, String> metadata) {
+    final String serviceDefinition = Utility.createSD(service.getServiceDef(), true);
+    return new ArrowheadService(serviceDefinition, interfaces, metadata);
+
+  }
+
+  public boolean isKeyValid(final String providedKey) {
+    final String sharedKey = props.getProperty(PROPERTY_SHARED_KEY, null);
+
+    if (sharedKey == null || providedKey == null) {
+      return false;
     }
 
-    public boolean isKeyValid(final String providedKey) {
-        final String sharedKey = props.getProperty(PROPERTY_SHARED_KEY, null);
+    return sharedKey.equals(providedKey);
+  }
 
-        if (sharedKey == null || providedKey == null) {
-            return false;
-        }
-
-        return sharedKey.equals(providedKey);
-    }
-
-    //code taken from client-java consumer code
-    private ServiceRequestForm compileSRF(ArrowheadService arrowheadService, Map<String, Boolean> orchestrationFlags){
+  //code taken from client-java consumer code
+  private ServiceRequestForm compileSRF(ArrowheadService arrowheadService, Map<String, Boolean> orchestrationFlags) {
 
 
     /*
@@ -200,64 +227,134 @@ public class OnboardingService {
       the address, port and authenticationInfo fields can be set to anything.
       SystemName can be an arbitrarily chosen name, which makes sense for the use case.
      */
+    String hostAddress = props.getProperty("address", "0.0.0.0");
+    if ("0.0.0.0".equals(hostAddress)) {
+      try {
+        hostAddress = Utility.getIpAddress();
+      } catch (SocketException e) {
+        // noop
+      }
+    }
+
     //TODO: systemName as constant (?)
-        ArrowheadSystem consumer = new ArrowheadSystem(CoreSystem.ONBOARDING.name(), props.getProperty("address", "0.0.0.0"),
-                                                       props.getIntProperty("secure_port", CoreSystem.ONBOARDING.getSecurePort()),
-                                                       "null");
-        //You can put any additional metadata you look for in a Service here (key-value pairs)
+    ArrowheadSystem consumer = new ArrowheadSystem(CoreSystem.ONBOARDING.name(), hostAddress, props
+      .getIntProperty("secure_port", CoreSystem.ONBOARDING.getSecurePort()), "null");
+    //You can put any additional metadata you look for in a Service here (key-value pairs)
 //        Map<String, String> metadata = new HashMap<>();
 //        metadata.put("unit", "celsius");
 //        if (isSecure) {
-        //This is a mandatory metadata when using TLS, do not delete it
+    //This is a mandatory metadata when using TLS, do not delete it
 //        metadata.put("security", "certificate");
 //        }
         /*
       ArrowheadService: serviceDefinition (name), interfaces, metadata
-      Interfaces: supported message formats (e.g. JSON, XML, JSON-SenML), a potential provider has to have at least 1 match,
+      Interfaces: supported message formats (e.g. JSON, XML, JSON-SenML), a potential provider has to have at least 1
+       match,
       so the communication between consumer and provider can be facilitated.
      */
-//        ArrowheadService servDevReg = new ArrowheadService(Utility.createSD(CoreSystemService.DEVICE_REG_SERVICE.getServiceDef(), true), Collections
+//        ArrowheadService servDevReg = new ArrowheadService(Utility.createSD(CoreSystemService.DEVICE_REG_SERVICE
+//        .getServiceDef(), true), Collections
 //            .singleton("HTTP-SECURE-JSON"), metadata);
 
-        //Some of the orchestrationFlags the consumer can use, to influence the orchestration process
+    //Some of the orchestrationFlags the consumer can use, to influence the orchestration process
 //        Map<String, Boolean> orchestrationFlags = new HashMap<>();
 
 //        orchestrationFlags.put("overrideStore", true);
 
-        ServiceRequestForm srf =
-            new ServiceRequestForm.Builder(consumer).requestedService(arrowheadService).orchestrationFlags(orchestrationFlags).build();
+    ServiceRequestForm srf = new ServiceRequestForm.Builder(consumer).requestedService(arrowheadService)
+                                                                     .orchestrationFlags(orchestrationFlags).build();
 
-        log.info("Orchestration srf:" + Utility.toPrettyJson(null, srf));
+    log.info("Orchestration srf:" + Utility.toPrettyJson(null, srf));
 
-        return srf;
-    }
+    return srf;
+  }
 
-    private String sendOrchestrationRequest(String orchestrationURI, ServiceRequestForm srf){
-        //Sending a POST request to the orchestrator (URL, method, payload)
-        Response postResponse = Utility.sendRequest(orchestrationURI, "POST", srf);
-        //Parsing the orchestrator response
-        OrchestrationResponse orchResponse = postResponse.readEntity(OrchestrationResponse.class);
-        System.out.println("Orchestration Response payload: " + Utility.toPrettyJson(null, orchResponse));
-        if (orchResponse.getResponse().isEmpty()) {
-//            throw new ArrowheadException("Orchestrator returned with 0 Orchestration Forms!");
+  private ServiceRegistryEntry sendServiceLookupRequest(final ArrowheadService service) {
 
-            log.info(String.format("Orchestration for %s failed", srf.getRequestedService().getServiceDefinition()));
+    final int maxRetries = 3;
+    int retries = 0;
 
+    final ServiceQueryForm serviceQueryForm = new ServiceQueryForm(service, true, false);
+
+    log.info("Searching for \"" + service.getServiceDefinition() + "\" on service registry");
+
+    while (retries < maxRetries) {
+      try {
+        // send lookup request to the service registry
+        final Response response = Utility.sendRequest(srBaseUri, "PUT", serviceQueryForm);
+
+        // verify that there is no HTTP error
+        if (response.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
+          final ServiceQueryResult lookupResult = response.readEntity(ServiceQueryResult.class);
+
+          // check if the entity is valid and actually found a service
+          if (lookupResult.isValid() && !lookupResult.getServiceQueryData().isEmpty()) {
+            final List<ServiceRegistryEntry> serviceQueryData = lookupResult.getServiceQueryData();
+            return serviceQueryData.get(0);
+          }
         }
+      } catch (Exception e) {
+        log.error(e.getMessage());
+      }
 
-        //Getting the first provider from the response
-//        ArrowheadSystem provider = orchResponse.getResponse().get(0).getProvider();
-//        String serviceURI =
-//            orchResponse.getResponse().get(0).getProvider().getAddress() + orchResponse.getResponse().get(0).getProvider().getPort() + orchResponse.getResponse().get(0).getServiceURI() + orchResponse.getResponse().get(0).getService().getServiceDefinition();
-        String serviceURI =
-            Utility.getUri(orchResponse.getResponse().get(0).getProvider().getAddress(),
-                           orchResponse.getResponse().get(0).getProvider().getPort(),
-                           orchResponse.getResponse().get(0).getServiceURI(), true, false);
-
-        log.info(String.format("Retrieved service URI from orchestrator: %s", serviceURI));
-
-
-        return serviceURI;
-
+      try {
+        retries++;
+        Thread.sleep(3000);
+      } catch (InterruptedException e) {
+        // noop
+      }
     }
+
+    throw new DataNotFoundException("Unable to find " + service.getServiceDefinition());
+  }
+
+  private String sendOrchestrationRequest(final String orchestrationURI, final ServiceRequestForm srf,
+                                          final boolean mandatory) {
+    final int maxRetries = 3;
+    int retries = 0;
+
+    while (retries < maxRetries) {
+      try {
+        //Sending a POST request to the orchestrator (URL, method, payload)
+        final Response postResponse = Utility.sendRequest(orchestrationURI, "POST", srf);
+
+        // verify that there is no HTTP error
+        if (postResponse.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
+          //Parsing the orchestrator response
+          OrchestrationResponse orchResponse = postResponse.readEntity(OrchestrationResponse.class);
+          log.debug("Orchestration Response payload: " + Utility.toPrettyJson(null, orchResponse));
+
+          if (!orchResponse.getResponse().isEmpty()) {
+
+            String serviceURI = Utility.getUri(orchResponse.getResponse().get(0).getProvider().getAddress(),
+                                               orchResponse.getResponse().get(0).getProvider().getPort(),
+                                               orchResponse.getResponse().get(0).getServiceURI(), true, false);
+
+            log.info(String.format("Retrieved service URI from orchestrator: %s", serviceURI));
+
+            return serviceURI;
+          }
+        }
+      } catch (Exception e) {
+        log.error(e.getMessage());
+      }
+
+      try {
+        retries++;
+        Thread.sleep(3000);
+      } catch (InterruptedException e) {
+        // noop
+      }
+    }
+
+    final String errorMessage = String
+      .format("Orchestration for %s failed", srf.getRequestedService().getServiceDefinition());
+    if (mandatory) {
+      log.error(errorMessage);
+      throw new ArrowheadException(errorMessage);
+    } else {
+      log.warn(errorMessage);
+      return null;
+    }
+  }
 }

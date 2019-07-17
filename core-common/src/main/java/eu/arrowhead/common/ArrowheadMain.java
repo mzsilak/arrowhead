@@ -57,13 +57,14 @@ public abstract class ArrowheadMain {
   public static final String OPENAPI_PATH = "/openapi.json";
 
   protected String srBaseUri;
+  protected boolean isSecure = false;
+  protected String baseUri;
   protected final TypeSafeProperties props = Utility.getProp();
 
   private boolean requestClientCertificate = true;
   private boolean daemon = false;
   private CoreSystem coreSystem;
   private HttpServer server;
-  private String baseUri;
   private String base64PublicKey;
   private int registeringTries = 1;
 
@@ -79,7 +80,6 @@ public abstract class ArrowheadMain {
     packages = addSwaggerToPackages(packages);
     this.coreSystem = coreSystem;
 
-    boolean isSecure = false;
     //Read in command line arguments
     for (String arg : args) {
       switch (arg) {
@@ -263,7 +263,7 @@ public abstract class ArrowheadMain {
       try {
         hostAddress = Utility.getIpAddress();
       } catch (SocketException e) {
-        // noop
+        hostAddress = "127.0.0.1";
       }
     }
 
@@ -308,6 +308,12 @@ public abstract class ArrowheadMain {
         Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT", srEntry);
       }
     }
+
+    systemRegistrationCallback(provider);
+  }
+
+  protected void systemRegistrationCallback(ArrowheadSystem system) {
+    // noop
   }
 
   protected void setRequestClientCertificate(final boolean requestClientCertificate)
