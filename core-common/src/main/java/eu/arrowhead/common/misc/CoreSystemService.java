@@ -20,8 +20,8 @@ public enum CoreSystemService {
   ORCH_SERVICE("OrchestrationService", "orchestrator/orchestration"),
   SERVICE_REGISTRY_SERVICE("ServiceRegistry", "serviceregistry/register"),
   SERVICE_LOOKUP_SERVICE("ServiceLookup", "serviceregistry/query"),
-  SYS_REG_SERVICE("PlaceHolder", "systemregistry/placeholder"),
-  DEVICE_REG_SERVICE("Placeholder2", "deviceregistry/placeholder"),
+  SYSTEM_REGISTRY_SERVICE("SystemRegistry", "systemregistry/publish"),
+  DEVICE_REGISTRY_SERVICE("DeviceRegistry", "deviceregistry/publish"),
   ONBOARDING_SERVICE("Onboarding", "onboarding");
 
   private final String serviceDef;

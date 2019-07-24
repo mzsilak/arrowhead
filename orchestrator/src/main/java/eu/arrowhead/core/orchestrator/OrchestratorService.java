@@ -66,6 +66,8 @@ final class OrchestratorService {
       for (ServiceRegistryEntry entry : srList) {
         providerSystems.add(entry.getProvider());
       }
+
+      log.debug("Checking authorisation if " + srf.getRequesterSystem() + " is allowed to use \"" + srf.getRequestedService() + "\" from " + providerSystems);
       providerSystems = OrchestratorDriver.queryAuthorization(srf.getRequesterSystem(), srf.getRequestedService(), providerSystems);
 
       /*

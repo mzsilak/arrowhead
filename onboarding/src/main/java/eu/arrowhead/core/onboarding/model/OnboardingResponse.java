@@ -11,7 +11,7 @@ public class OnboardingResponse {
     // TODO provide only service registry
     private final ServiceEndpoint[] services;
     private final String onboardingCertificate;
-    private final String immediateCertificate;
+    private final String intermediateCertificate;
     private final String rootCertificate;
     private String keyAlgorithm;
     private String keyFormat;
@@ -22,12 +22,12 @@ public class OnboardingResponse {
         this.success = success;
         if(response != null){
         this.onboardingCertificate = response.getEncodedSignedCert();
-        this.immediateCertificate = response.getIntermediateCert();
+        this.intermediateCertificate = response.getIntermediateCert();
         this.rootCertificate = response.getRootCert();}
             else
             {
                 onboardingCertificate = null;
-                immediateCertificate = null;
+                intermediateCertificate = null;
                 rootCertificate = null;
             }
         this.services = services;
@@ -57,8 +57,8 @@ public class OnboardingResponse {
         return onboardingCertificate;
     }
 
-    public String getImmediateCertificate() {
-        return immediateCertificate;
+    public String getIntermediateCertificate() {
+        return intermediateCertificate;
     }
 
     public String getRootCertificate() {

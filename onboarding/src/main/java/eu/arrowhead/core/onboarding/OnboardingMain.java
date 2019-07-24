@@ -49,38 +49,33 @@ public class OnboardingMain extends ArrowheadMain {
 
     final Set<String> restInterface = Sets.newHashSet("HTTP-SECURE-JSON", "HTTP-INSECURE-JSON");
 
-    final ArrowheadService serviceLookup = getService(CoreSystemService.SERVICE_LOOKUP_SERVICE, restInterface);
-    final ArrowheadService orchService = getService(CoreSystemService.ORCH_SERVICE, restInterface);
     final ArrowheadService authService = getService(CoreSystemService.AUTH_CONTROL_SERVICE, restInterface);
-    final ArrowheadService devRegService = getService(CoreSystemService.DEVICE_REG_SERVICE, restInterface);
-    final ArrowheadService sysRegService = getService(CoreSystemService.SYS_REG_SERVICE, restInterface);
-
-    final ServiceRegistryEntry orchEntry = lookupService(orchService);
-    final ArrowheadSystem orchSystem = orchEntry.getProvider();
-
     final ServiceRegistryEntry authEntry = lookupService(authService);
     final ArrowheadSystem authSystem = authEntry.getProvider();
 
-    final ServiceRegistryEntry devRegEntry = lookupService(devRegService);
-    final ArrowheadSystem devRegSystem = devRegEntry.getProvider();
-
-    final ServiceRegistryEntry sysRegEntry = lookupService(sysRegService);
-    final ArrowheadSystem sysRegSystem = sysRegEntry.getProvider();
-
-    final ServiceRegistryEntry serRegEntry = lookupService(serviceLookup);
-    final ArrowheadSystem serRegSystem = serRegEntry.getProvider();
-
-    final String authBaseUri = Utility
-      .getUri(authSystem.getAddress(), authSystem.getPort(), authEntry.getServiceURI(), isSecure, false);
+    final String authBaseUri = Utility.getUri(authSystem.getAddress(), authSystem.getPort(),
+                                              authEntry.getServiceURI(), isSecure, false);
     final String authMgmtUri = UriBuilder.fromUri(authBaseUri).path("mgmt/intracloud").build().toString();
 
     logger.info("Registering access rights on authorization system");
-    createAuthRule(authMgmtUri, onboardingSystem, serRegSystem, serviceLookup);
-    createAuthRule(authMgmtUri, onboardingSystem, orchSystem, orchService);
-    createAuthRule(authMgmtUri, onboardingSystem, authSystem, authService);
-    createAuthRule(authMgmtUri, onboardingSystem, devRegSystem, devRegService);
-    createAuthRule(authMgmtUri, onboardingSystem, sysRegSystem, sysRegService);
+    lookupAndAuthorize(authMgmtUri, onboardingSystem, CoreSystemService.SERVICE_LOOKUP_SERVICE, restInterface);
+    lookupAndAuthorize(authMgmtUri, onboardingSystem, CoreSystemService.ORCH_SERVICE, restInterface);
+    lookupAndAuthorize(authMgmtUri, onboardingSystem, CoreSystemService.DEVICE_REGISTRY_SERVICE, restInterface);
+    lookupAndAuthorize(authMgmtUri, onboardingSystem, CoreSystemService.SYSTEM_REGISTRY_SERVICE, restInterface);
+    lookupAndAuthorize(authMgmtUri, onboardingSystem, CoreSystemService.SERVICE_REGISTRY_SERVICE, restInterface);
   }
+
+  private void lookupAndAuthorize(final String authMgmtUri,
+                                             final ArrowheadSystem consumer,
+                                             final CoreSystemService coreSystemService,
+                                             final Set<String> restInterface)
+  {
+    final ArrowheadService service = getService(coreSystemService, restInterface);
+    final ServiceRegistryEntry serviceRegistryEntry = lookupService(service);
+    final ArrowheadSystem system = serviceRegistryEntry.getProvider();
+    createAuthRule(authMgmtUri, consumer, system, service);
+  }
+
 
   private void createAuthRule(final String authMgmtUri,
                               final ArrowheadSystem consumer,

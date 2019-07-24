@@ -41,8 +41,19 @@ public class PrincipalSubjectData {
   private final boolean present;
   private final Map<SubjectFields, String> subjectMap = new HashMap<>();
 
+  private PrincipalSubjectData(final PrincipalSubjectData other)
+  {
+    other.subjectMap.forEach(this.subjectMap::put);
+    this.present = other.present;
+  }
+
   public PrincipalSubjectData(final Principal principal) {
-    this(SecurityUtils.getCertCNFromSubject(principal.getName()));
+    present = principal != null && principal.getName() != null;
+    if (!present) {
+      return;
+    }
+
+    splitSubject(principal.getName());
   }
 
   public PrincipalSubjectData(final String subject) {
@@ -50,6 +61,20 @@ public class PrincipalSubjectData {
     present = subject != null;
     if (!present) {
       return;
+    }
+
+    splitSubject(subject);
+  }
+
+  private void splitSubject(String subject)
+  {
+    if (!present) {
+      return;
+    }
+
+    if(subject.startsWith("CN"))
+    {
+      subject = SecurityUtils.getCertCNFromSubject(subject);
     }
 
     String[] fields = subject.split("\\.", 4);
@@ -115,7 +140,7 @@ public class PrincipalSubjectData {
   }
 
   public PrincipalSubjectData createWithSuffix(final String commonName) {
-    PrincipalSubjectData data = new PrincipalSubjectData(getSubject());
+    PrincipalSubjectData data = new PrincipalSubjectData(this);
     data.subjectMap.put(SubjectFields.COMMON_NAME, commonName);
     data.subjectMap.put(SubjectFields.FULL_NAME, commonName + "." + getSuffix());
     return data;

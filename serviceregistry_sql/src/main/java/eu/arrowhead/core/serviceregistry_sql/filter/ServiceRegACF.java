@@ -14,6 +14,7 @@ import eu.arrowhead.common.filter.AccessControlFilter;
 import eu.arrowhead.common.filter.PrincipalSubjectData;
 import eu.arrowhead.common.filter.PrincipalSubjectData.SubjectFields;
 import java.net.URI;
+import java.util.Objects;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.core.Configuration;
@@ -51,8 +52,21 @@ public class ServiceRegACF extends AccessControlFilter {
     else if(path.endsWith("register") || path.endsWith("remove"))
     {
       // may only register/remove its own service
-      ServiceRegistryEntry entry = Utility.fromJson(requestJson, ServiceRegistryEntry.class);
-      String providerName = entry.getProvider().getSystemName();
+      final ServiceRegistryEntry entry = Utility.fromJson(requestJson, ServiceRegistryEntry.class);
+
+      if(Objects.isNull(entry.getProvider()) || Objects.isNull(entry.getProvider().getSystemName()))
+      {
+        throw new AuthException("ProviderName is missing");
+      }
+
+      final String providerName = entry.getProvider().getSystemName();
+
+      if(!clientSubject.isPresent())
+      {
+        throw new AuthException("Client certificate is missing!");
+      }
+
+
       if (!providerName.equalsIgnoreCase(clientSubject.getCommonName())) {
         log.error("Provider system name and cert common name do not match! SR registering/removing denied!");
         throw new AuthException("Provider system " + providerName + " and cert common name (" + clientSubject.getCommonName() + ") do not match!");

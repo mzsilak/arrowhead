@@ -164,9 +164,9 @@ public class OnboardingService {
 
     log.info("Getting publish service endpoints of registries...");
 
-    ArrowheadService servDevReg = compileService(CoreSystemService.DEVICE_REG_SERVICE, interfaces, metadata);
-    ArrowheadService servSysReg = compileService(CoreSystemService.SYS_REG_SERVICE, interfaces, metadata);
-    ArrowheadService servSerReg = compileService(CoreSystemService.SERVICE_LOOKUP_SERVICE, interfaces, metadata);
+    ArrowheadService servDevReg = compileService(CoreSystemService.DEVICE_REGISTRY_SERVICE, interfaces, metadata);
+    ArrowheadService servSysReg = compileService(CoreSystemService.SYSTEM_REGISTRY_SERVICE, interfaces, metadata);
+    ArrowheadService servSerReg = compileService(CoreSystemService.SERVICE_REGISTRY_SERVICE, interfaces, metadata);
 
     //Some of the orchestrationFlags the consumer can use, to influence the orchestration process
     final Map<String, Boolean> orchestrationFlags = new HashMap<>();
@@ -189,13 +189,13 @@ public class OnboardingService {
     final List<ServiceEndpoint> endpoints = new ArrayList<>();
 
     if(devregServiceURI != null)
-    endpoints.add(new ServiceEndpoint(CoreSystem.DEVICE_REGISTRY, new URI(devregServiceURI)));
+    endpoints.add(new ServiceEndpoint(CoreSystemService.DEVICE_REGISTRY_SERVICE, new URI(devregServiceURI)));
 
     if(sysregServiceURI != null)
-    endpoints.add(new ServiceEndpoint(CoreSystem.SYSTEM_REGISTRY, new URI(sysregServiceURI)));
+    endpoints.add(new ServiceEndpoint(CoreSystemService.SYSTEM_REGISTRY_SERVICE, new URI(sysregServiceURI)));
 
     if(serregServiceURI != null)
-    endpoints.add(new ServiceEndpoint(CoreSystem.SERVICE_REGISTRY_SQL, new URI(serregServiceURI)));
+    endpoints.add(new ServiceEndpoint(CoreSystemService.SERVICE_REGISTRY_SERVICE, new URI(serregServiceURI)));
 
     return endpoints.toArray(new ServiceEndpoint[0]);
   }
@@ -252,7 +252,7 @@ public class OnboardingService {
        match,
       so the communication between consumer and provider can be facilitated.
      */
-//        ArrowheadService servDevReg = new ArrowheadService(Utility.createSD(CoreSystemService.DEVICE_REG_SERVICE
+//        ArrowheadService servDevReg = new ArrowheadService(Utility.createSD(CoreSystemService.DEVICE_REGISTRY_SERVICE
 //        .getServiceDef(), true), Collections
 //            .singleton("HTTP-SECURE-JSON"), metadata);
 
@@ -312,6 +312,7 @@ public class OnboardingService {
                                           final boolean mandatory) {
     final int maxRetries = 3;
     int retries = 0;
+    String error = null;
 
     while (retries < maxRetries) {
       try {
@@ -336,7 +337,8 @@ public class OnboardingService {
           }
         }
       } catch (Exception e) {
-        log.error(e.getMessage());
+        error = e.getMessage();
+        log.warn(error);
       }
 
       try {
@@ -348,12 +350,12 @@ public class OnboardingService {
     }
 
     final String errorMessage = String
-      .format("Orchestration for %s failed", srf.getRequestedService().getServiceDefinition());
+      .format("Orchestration for %s failed: %s", srf.getRequestedService().getServiceDefinition(), error);
     if (mandatory) {
-      log.error(errorMessage);
+      log.fatal(errorMessage);
       throw new ArrowheadException(errorMessage);
     } else {
-      log.warn(errorMessage);
+      log.error(errorMessage);
       return null;
     }
   }
