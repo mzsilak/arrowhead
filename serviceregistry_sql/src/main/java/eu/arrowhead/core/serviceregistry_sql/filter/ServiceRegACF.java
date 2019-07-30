@@ -33,10 +33,10 @@ public class ServiceRegACF extends AccessControlFilter {
   public ServiceRegACF(@Context Configuration configuration)
   {
     super(configuration);
-    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
-    orchestrator = serverSubject.createWithSuffix("orchestrator");
-    certificateAuthority = serverSubject.createWithSuffix("certificateauthority");
-    onboardingController = serverSubject.createWithSuffix("onboarding");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
+    orchestrator = serverSubject.createWithPrefix("orchestrator");
+    certificateAuthority = serverSubject.createWithPrefix("certificateauthority");
+    onboardingController = serverSubject.createWithPrefix("onboarding");
   }
 
   @Override

@@ -29,8 +29,8 @@ public class ServiceRegACF extends AccessControlFilter {
 
   public ServiceRegACF(@Context Configuration configuration) {
     super(configuration);
-    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
-    orchestrator = serverSubject.createWithSuffix("orchestrator");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
+    orchestrator = serverSubject.createWithPrefix("orchestrator");
   }
 
   @Override

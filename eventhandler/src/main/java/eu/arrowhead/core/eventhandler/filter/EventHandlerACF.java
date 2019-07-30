@@ -28,8 +28,8 @@ public class EventHandlerACF extends AccessControlFilter {
 
   public EventHandlerACF(@Context Configuration configuration) {
     super(configuration);
-    sysop = serverSubject.createWithSuffix("sysop");
-    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
+    sysop = serverSubject.createWithPrefix("sysop");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
   }
 
   @Override

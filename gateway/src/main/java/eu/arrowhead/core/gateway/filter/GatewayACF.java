@@ -26,8 +26,8 @@ public class GatewayACF extends AccessControlFilter {
   protected GatewayACF(@Context Configuration configuration)
   {
     super(configuration);
-    sysop = serverSubject.createWithSuffix("sysop");
-    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
+    sysop = serverSubject.createWithPrefix("sysop");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
   }
   @Override
   protected void verifyClientAuthorized(PrincipalSubjectData clientData, String method, URI requestTarget,

@@ -30,11 +30,11 @@ public class AuthACF extends AccessControlFilter {
   public AuthACF(@Context Configuration configuration)
   {
     super(configuration);
-    sysop = serverSubject.createWithSuffix("sysop");
-    orchestrator = serverSubject.createWithSuffix("orchestrator");
-    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
-    certificateAuthority = serverSubject.createWithSuffix("certificateauthority");
-    onboardingController = serverSubject.createWithSuffix("onboarding");
+    sysop = serverSubject.createWithPrefix("sysop");
+    orchestrator = serverSubject.createWithPrefix("orchestrator");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
+    certificateAuthority = serverSubject.createWithPrefix("certificateauthority");
+    onboardingController = serverSubject.createWithPrefix("onboarding");
   }
 
   @Override

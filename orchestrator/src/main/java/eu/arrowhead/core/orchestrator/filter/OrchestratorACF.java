@@ -29,8 +29,8 @@ public class OrchestratorACF extends AccessControlFilter {
 
   protected OrchestratorACF(@Context Configuration configuration) {
     super(configuration);
-    sysop = serverSubject.createWithSuffix("sysop");
-    gatekeeper = serverSubject.createWithSuffix("gatekeeper");
+    sysop = serverSubject.createWithPrefix("sysop");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
   }
 
   @Override

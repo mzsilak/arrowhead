@@ -139,7 +139,7 @@ public class PrincipalSubjectData {
     return this.getSubject().equals(other.getSubject());
   }
 
-  public PrincipalSubjectData createWithSuffix(final String commonName) {
+  public PrincipalSubjectData createWithPrefix(final String commonName) {
     PrincipalSubjectData data = new PrincipalSubjectData(this);
     data.subjectMap.put(SubjectFields.COMMON_NAME, commonName);
     data.subjectMap.put(SubjectFields.FULL_NAME, commonName + "." + getSuffix());

@@ -27,8 +27,8 @@ public class GatekeeperACF extends AccessControlFilter {
   public GatekeeperACF(@Context Configuration configuration)
   {
     super(configuration);
-    sysop = serverSubject.createWithSuffix("sysop");
-    orchestrator = serverSubject.createWithSuffix("orchestrator");
+    sysop = serverSubject.createWithPrefix("sysop");
+    orchestrator = serverSubject.createWithPrefix("orchestrator");
   }
 
   @Override
