@@ -45,13 +45,10 @@ public class Remove extends AbstractMethodInvocationHandler {
             new ServiceRegistryResource().removeGeneric(
                     new ServiceRegistryOpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
         } catch (JsonParseException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (JsonMappingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 

@@ -55,280 +55,275 @@ import eu.arrowhead.common.opcua.ArrowheadOpcUaServer;
 
 public abstract class ArrowheadMain {
 
-  public static final List<String> dbFields = Collections
-      .unmodifiableList(Arrays.asList("db_user", "db_password", "db_address"));
-  public static final List<String> certFields = Collections
-      .unmodifiableList(Arrays.asList("keystore", "keystorepass", "keypass", "truststore", "truststorepass"));
-  public static final Map<String, String> secureServerMetadata = Collections.singletonMap("security", "certificate");
+	public static final List<String> dbFields = Collections
+			.unmodifiableList(Arrays.asList("db_user", "db_password", "db_address"));
+	public static final List<String> certFields = Collections
+			.unmodifiableList(Arrays.asList("keystore", "keystorepass", "keypass", "truststore", "truststorepass"));
+	public static final Map<String, String> secureServerMetadata = Collections.singletonMap("security", "certificate");
 
-    protected String srBaseUri;
-    protected final TypeSafeProperties props = Utility.getProp();
+	protected String srBaseUri;
+	protected final TypeSafeProperties props = Utility.getProp();
 
-    private boolean daemon = false;
-    private CoreSystem coreSystem;
-    private HttpServer server;
-    private UaNodeContext nodeContext;
-    private UaNodeManager nodeManager;
-    private String baseUri;
-    private String base64PublicKey;
-    private int registeringTries = 1;
+	private boolean daemon = false;
+	private CoreSystem coreSystem;
+	private HttpServer server;
+	protected ArrowheadOpcUaServer arrowheaduaserver;
+	private String baseUri;
+	private String base64PublicKey;
+	private int registeringTries = 1;
 
-    private static final Logger log = Logger.getLogger(ArrowheadMain.class.getName());
+	private static final Logger log = Logger.getLogger(ArrowheadMain.class.getName());
 
-    {
-        DatabaseManager.init();
-        PropertyConfigurator.configure(props);
-    }
+	{
+		DatabaseManager.init();
+		PropertyConfigurator.configure(props);
+	}
 
-    protected void init(CoreSystem coreSystem, String[] args, Set<Class<?>> classes, String[] packages) {
-        System.out.println("Working directory: " + System.getProperty("user.dir"));
-        packages = addSwaggerToPackages(packages);
-        this.coreSystem = coreSystem;
+	protected void init(CoreSystem coreSystem, String[] args, Set<Class<?>> classes, String[] packages) {
+		System.out.println("Working directory: " + System.getProperty("user.dir"));
+		packages = addSwaggerToPackages(packages);
+		this.coreSystem = coreSystem;
 
-        boolean isSecure = false;
-        // Read in command line arguments
-        for (String arg : args) {
-            switch (arg) {
-            case "-daemon":
-                daemon = true;
-                System.out.println("Starting server as daemon!");
-                break;
-            case "-d":
-                System.setProperty("debug_mode", "true");
-                System.out.println("Starting server in debug mode!");
-                break;
-            case "-tls":
-                System.setProperty("is_secure", "true");
-                isSecure = true;
-                break;
-            case "-opcua":
-                try {
-                    ArrowheadOpcUaServer arrowheaduaserver = new ArrowheadOpcUaServer();
-                    arrowheaduaserver.startup().get();
-                    final CompletableFuture<Void> future = new CompletableFuture<>();
-                    Runtime.getRuntime().addShutdownHook(new Thread(() -> future.complete(null)));
-                    // future.get();
-                    System.out.println("Starting an opc ua server");
-                    nodeContext = arrowheaduaserver.getNodeContext();
-                    nodeManager = arrowheaduaserver.getNodeManager();
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }
+		boolean isSecure = false;
+		// Read in command line arguments
+		for (String arg : args) {
+			switch (arg) {
+			case "-daemon":
+				daemon = true;
+				System.out.println("Starting server as daemon!");
+				break;
+			case "-d":
+				System.setProperty("debug_mode", "true");
+				System.out.println("Starting server in debug mode!");
+				break;
+			case "-tls":
+				System.setProperty("is_secure", "true");
+				isSecure = true;
+				break;
+			}
+		}
 
-        // Get the URL where the web-server will bind to
-        String address = props.getProperty("address", "0.0.0.0");
-        int port = isSecure ? props.getIntProperty("secure_port", coreSystem.getSecurePort())
-                : props.getIntProperty("insecure_port", coreSystem.getInsecurePort());
-        baseUri = Utility.getUri(address, port, null, isSecure, true);
+		// Get the URL where the web-server will bind to
+		String address = props.getProperty("address", "0.0.0.0");
+		int port = isSecure ? props.getIntProperty("secure_port", coreSystem.getSecurePort())
+				: props.getIntProperty("insecure_port", coreSystem.getInsecurePort());
+		baseUri = Utility.getUri(address, port, null, isSecure, true);
 
-        // Start the web-server
-        if (isSecure) {
-            List<String> allMandatoryProperties = new ArrayList<>(coreSystem.getAlwaysMandatoryFields());
-            allMandatoryProperties.addAll(coreSystem.getSecureMandatoryFields());
-            Utility.checkProperties(props.stringPropertyNames(), allMandatoryProperties);
-            startSecureServer(classes, packages);
-        } else {
-            Utility.checkProperties(props.stringPropertyNames(), coreSystem.getAlwaysMandatoryFields());
-            startServer(classes, packages);
-        }
+		// Start the web-server
+		if (isSecure) {
+			List<String> allMandatoryProperties = new ArrayList<>(coreSystem.getAlwaysMandatoryFields());
+			allMandatoryProperties.addAll(coreSystem.getSecureMandatoryFields());
+			Utility.checkProperties(props.stringPropertyNames(), allMandatoryProperties);
+			startSecureServer(classes, packages);
+		} else {
+			Utility.checkProperties(props.stringPropertyNames(), coreSystem.getAlwaysMandatoryFields());
+			startServer(classes, packages);
+		}
 
+		// Register the core system services to the Service Registry
+		if (!coreSystem.equals(CoreSystem.SERVICE_REGISTRY_DNS)
+				&& !coreSystem.equals(CoreSystem.SERVICE_REGISTRY_SQL)) {
+			String srAddress = props.getProperty("sr_address", "0.0.0.0");
+			int srPort = isSecure
+					? props.getIntProperty("sr_secure_port", CoreSystem.SERVICE_REGISTRY_SQL.getSecurePort())
+					: props.getIntProperty("sr_insecure_port", CoreSystem.SERVICE_REGISTRY_SQL.getInsecurePort());
+			srBaseUri = Utility.getUri(srAddress, srPort, "serviceregistry", isSecure, true);
+			Utility.setServiceRegistryUri(srBaseUri);
+			useSRService(true);
+		}
+	}
 
-    //Register the core system services to the Service Registry
-    if (!coreSystem.equals(CoreSystem.SERVICE_REGISTRY_DNS) && !coreSystem.equals(CoreSystem.SERVICE_REGISTRY_SQL)) {
-      String srAddress = props.getProperty("sr_address", "0.0.0.0");
-      int srPort = isSecure ? props.getIntProperty("sr_secure_port", CoreSystem.SERVICE_REGISTRY_SQL.getSecurePort())
-                            : props
-                       .getIntProperty("sr_insecure_port", CoreSystem.SERVICE_REGISTRY_SQL.getInsecurePort());
-      srBaseUri = Utility.getUri(srAddress, srPort, "serviceregistry", isSecure, true);
-      Utility.setServiceRegistryUri(srBaseUri);
-      useSRService(true);
-      }
-    }
+	protected void listenForInput() {
+		log.info(coreSystem + " startup completed.");
+		if (daemon) {
+			System.out.println("In daemon mode, process will terminate for TERM signal...");
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				System.out.println("Received TERM signal, shutting down...");
+				shutdown();
+			}));
+		} else {
+			System.out.println("Type \"stop\" to shutdown " + coreSystem.name() + " Server...");
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			String input = "";
+			try {
+				while (!input.equals("stop")) {
+					input = br.readLine();
+				}
+				br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			shutdown();
+		}
+	}
 
-    protected void listenForInput() {
-        log.info(coreSystem + " startup completed.");
-        if (daemon) {
-            System.out.println("In daemon mode, process will terminate for TERM signal...");
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println("Received TERM signal, shutting down...");
-                shutdown();
-            }));
-        } else {
-            System.out.println("Type \"stop\" to shutdown " + coreSystem.name() + " Server...");
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            String input = "";
-            try {
-                while (!input.equals("stop")) {
-                    input = br.readLine();
-                }
-                br.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            shutdown();
-        }
-    }
+	private void startServer(Set<Class<?>> classes, String[] packages) {
+		final ResourceConfig config = new ResourceConfig();
+		config.registerClasses(classes);
+		config.packages(packages);
 
-    private void startServer(Set<Class<?>> classes, String[] packages) {
-        final ResourceConfig config = new ResourceConfig();
-        config.registerClasses(classes);
-        config.packages(packages);
+		URI uri = UriBuilder.fromUri(baseUri).build();
+		try {
+			server = GrizzlyHttpServerFactory.createHttpServer(uri, config, false);
+			configureServer(server);
+			server.start();
+			log.info("Started server at: " + baseUri);
+			System.out.println("Started insecure server at: " + baseUri);
+		} catch (IOException | ProcessingException e) {
+			throw new ServiceConfigurationError(
+					"Make sure you gave a valid address in the config file! (Assignable to this JVM and not in use already)",
+					e);
+		}
+	}
 
+	protected void startSecureServer(Set<Class<?>> classes, String[] packages) {
+		final ResourceConfig config = new ResourceConfig();
+		config.registerClasses(classes);
+		config.packages(packages);
 
-    URI uri = UriBuilder.fromUri(baseUri).build();
-    try {
-      server = GrizzlyHttpServerFactory.createHttpServer(uri, config, false);
-      configureServer(server);
-      server.start();
-      log.info("Started server at: " + baseUri);
-      System.out.println("Started insecure server at: " + baseUri);
-    } catch (IOException | ProcessingException e) {
-      throw new ServiceConfigurationError(
-          "Make sure you gave a valid address in the config file! (Assignable to this JVM and not in use already)", e);
-      }
-    }
+		String keystorePath = props.getProperty("keystore");
+		String keystorePass = props.getProperty("keystorepass");
+		String keyPass = props.getProperty("keypass");
+		String truststorePath = props.getProperty("truststore");
+		String truststorePass = props.getProperty("truststorepass");
 
-    protected void startSecureServer(Set<Class<?>> classes, String[] packages) {
-        final ResourceConfig config = new ResourceConfig();
-        config.registerClasses(classes);
-        config.packages(packages);
+		SSLContextConfigurator sslCon = new SSLContextConfigurator();
+		sslCon.setKeyStoreFile(keystorePath);
+		sslCon.setKeyStorePass(keystorePass);
+		sslCon.setKeyPass(keyPass);
+		sslCon.setTrustStoreFile(truststorePath);
+		sslCon.setTrustStorePass(truststorePass);
+		SSLContext sslContext;
+		try {
+			sslContext = sslCon.createSSLContext(true);
+		} catch (GenericStoreException e) {
+			log.fatal("SSL Context is not valid, check the certificate or the config files!");
+			throw new AuthException("SSL Context is not valid, check the certificate or the config files!", e);
+		}
+		Utility.setSSLContext(sslContext);
 
-        String keystorePath = props.getProperty("keystore");
-        String keystorePass = props.getProperty("keystorepass");
-        String keyPass = props.getProperty("keypass");
-        String truststorePath = props.getProperty("truststore");
-        String truststorePass = props.getProperty("truststorepass");
+		KeyStore keyStore = SecurityUtils.loadKeyStore(keystorePath, keystorePass);
+		X509Certificate serverCert = SecurityUtils.getFirstCertFromKeyStore(keyStore);
+		base64PublicKey = Base64.getEncoder().encodeToString(serverCert.getPublicKey().getEncoded());
+		System.out.println("Server PublicKey Base64: " + base64PublicKey);
+		String serverCN = SecurityUtils.getCertCNFromSubject(serverCert.getSubjectDN().getName());
+		if (!SecurityUtils.isKeyStoreCNArrowheadValid(serverCN)) {
+			log.fatal("Server CN is not compliant with the Arrowhead cert structure");
+			throw new AuthException("Server CN ( " + serverCN
+					+ ") is not compliant with the Arrowhead cert structure, since it does not have 5 "
+					+ "parts, or does not end with" + " \"arrowhead.eu\"");
+		}
+		log.info("Certificate of the secure server: " + serverCN);
+		config.property("server_common_name", serverCN);
 
-        SSLContextConfigurator sslCon = new SSLContextConfigurator();
-        sslCon.setKeyStoreFile(keystorePath);
-        sslCon.setKeyStorePass(keystorePass);
-        sslCon.setKeyPass(keyPass);
-        sslCon.setTrustStoreFile(truststorePath);
-        sslCon.setTrustStorePass(truststorePass);
-        SSLContext sslContext;
-        try {
-            sslContext = sslCon.createSSLContext(true);
-        } catch (GenericStoreException e) {
-            log.fatal("SSL Context is not valid, check the certificate or the config files!");
-            throw new AuthException("SSL Context is not valid, check the certificate or the config files!", e);
-        }
-        Utility.setSSLContext(sslContext);
+		URI uri = UriBuilder.fromUri(baseUri).build();
+		try {
+			server = GrizzlyHttpServerFactory.createHttpServer(uri, config, true,
+					new SSLEngineConfigurator(sslCon).setClientMode(false).setNeedClientAuth(true), false);
+			configureServer(server);
+			server.start();
+			log.info("Started server at: " + baseUri);
+			System.out.println("Started secure server at: " + baseUri);
+		} catch (IOException | ProcessingException e) {
+			throw new ServiceConfigurationError(
+					"Make sure you gave a valid address in the config file! (Assignable to this JVM and not in use already)",
+					e);
+		}
+	}
 
-    KeyStore keyStore = SecurityUtils.loadKeyStore(keystorePath, keystorePass);
-    X509Certificate serverCert = SecurityUtils.getFirstCertFromKeyStore(keyStore);
-    base64PublicKey = Base64.getEncoder().encodeToString(serverCert.getPublicKey().getEncoded());
-    System.out.println("Server PublicKey Base64: " + base64PublicKey);
-    String serverCN = SecurityUtils.getCertCNFromSubject(serverCert.getSubjectDN().getName());
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(serverCN)) {
-      log.fatal("Server CN is not compliant with the Arrowhead cert structure");
-      throw new AuthException(
-          "Server CN ( " + serverCN + ") is not compliant with the Arrowhead cert structure, since it does not have 5 "
-              + "parts, or does not end with" + " \"arrowhead.eu\"");
-    }
-    log.info("Certificate of the secure server: " + serverCN);
-    config.property("server_common_name", serverCN);
+	private void configureServer(HttpServer server) {
+		// Add swagger UI to the server
+		final HttpHandler httpHandler = new CLStaticHttpHandler(HttpServer.class.getClassLoader(), "/swagger/");
+		server.getServerConfiguration().addHttpHandler(httpHandler, "/api");
+		// Allow message payload for GET and DELETE requests - ONLY to provide custom
+		// error message for them
+		server.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
+	}
 
-    URI uri = UriBuilder.fromUri(baseUri).build();
-    try {
-      server = GrizzlyHttpServerFactory.createHttpServer(uri, config, true,
-                                                         new SSLEngineConfigurator(sslCon).setClientMode(false)
-                                                                                          .setNeedClientAuth(true),
-                                                         false);
-      configureServer(server);
-      server.start();
-      log.info("Started server at: " + baseUri);
-      System.out.println("Started secure server at: " + baseUri);
-    } catch (IOException | ProcessingException e) {
-      throw new ServiceConfigurationError(
-          "Make sure you gave a valid address in the config file! (Assignable to this JVM and not in use already)", e);
-      }
-    }
+	private void shutdown() {
+		useSRService(false);
+		DatabaseManager.closeSessionFactory();
+		if (server != null) {
+			log.info("Stopping server at: " + baseUri);
+			server.shutdownNow();
+		}
+		System.out.println(coreSystem + " Server stopped");
+		System.exit(0);
+	}
+	
+	protected void startUaServer (String endpoint) {
+		try {
+			int port = props.getIntProperty("opcua_port", coreSystem.getOpcUaPort());
+			arrowheaduaserver = ArrowheadOpcUaServer.getInstance(port, endpoint);
+			arrowheaduaserver.startup().get();
+			final CompletableFuture<Void> future = new CompletableFuture<>();
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> future.complete(null)));
+			// future.get();
+			System.out.println("Starting an opc ua server");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void useSRService(boolean registering) {
+		// Preparing the payload
+		final URI uri = UriBuilder.fromUri(baseUri).build();
+		final boolean isSecure = uri.getScheme().equals("https");
+		final String interfaceName = isSecure ? "HTTP-SECURE-JSON" : "HTTP-INSECURE-JSON";
+		final ArrowheadSystem provider = new ArrowheadSystem(coreSystem.name(), uri.getHost(), uri.getPort(),
+				base64PublicKey);
 
-    private void configureServer(HttpServer server) {
-        // Add swagger UI to the server
-        final HttpHandler httpHandler = new CLStaticHttpHandler(HttpServer.class.getClassLoader(), "/swagger/");
-        server.getServerConfiguration().addHttpHandler(httpHandler, "/api");
-        // Allow message payload for GET and DELETE requests - ONLY to provide custom
-        // error message for them
-        server.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
-    }
+		for (CoreSystemService service : coreSystem.getServices()) {
+			ArrowheadService providedService = new ArrowheadService(Utility.createSD(service.getServiceDef(), isSecure),
+					Collections.singleton(interfaceName), null);
+			if (isSecure) {
+				providedService.setServiceMetadata(ArrowheadMain.secureServerMetadata);
+			}
+			ServiceRegistryEntry srEntry = new ServiceRegistryEntry(providedService, provider, service.getServiceURI());
 
-    private void shutdown() {
-        useSRService(false);
-        DatabaseManager.closeSessionFactory();
-        if (server != null) {
-            log.info("Stopping server at: " + baseUri);
-            server.shutdownNow();
-        }
-        System.out.println(coreSystem + " Server stopped");
-        System.exit(0);
-    }
+			if (registering) {
+				try {
+					Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("register").build().toString(), "POST",
+							srEntry);
+				} catch (ArrowheadException e) {
+					if (e.getExceptionType() == ExceptionType.DUPLICATE_ENTRY) {
+						Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT",
+								srEntry);
+						Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("register").build().toString(), "POST",
+								srEntry);
+					} else if (e.getExceptionType() == ExceptionType.UNAVAILABLE) {
+						System.out.println("Service Registry is unavailable at the moment, retrying in 15 seconds...");
+						try {
+							Thread.sleep(15000);
+							if (registeringTries == 3) {
+								throw e;
+							} else {
+								registeringTries++;
+								// noinspection ConstantConditions
+								useSRService(registering);
+							}
+						} catch (InterruptedException e1) {
+							e1.printStackTrace();
+						}
+					} else {
+						throw new ArrowheadException(service.getServiceDef() + " service registration failed.", e);
+					}
+				}
+				registeringTries = 1;
+			} else {
+				Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT", srEntry);
+			}
+		}
+	}
 
-  private void useSRService(boolean registering) {
-    //Preparing the payload
-    final URI uri = UriBuilder.fromUri(baseUri).build();
-    final boolean isSecure = uri.getScheme().equals("https");
-    final String interfaceName = isSecure ? "HTTP-SECURE-JSON" : "HTTP-INSECURE-JSON";
-    final ArrowheadSystem provider = new ArrowheadSystem(coreSystem.name(), uri.getHost(), uri.getPort(),
-                                                         base64PublicKey);
+	private String[] addSwaggerToPackages(String[] packages) {
+		packages = Arrays.copyOf(packages, packages.length + 1);
+		packages[packages.length - 1] = "io.swagger.v3.jaxrs2.integration.resources";
+		return packages;
+	}
 
-    for (CoreSystemService service : coreSystem.getServices()) {
-      ArrowheadService providedService = new ArrowheadService(Utility.createSD(service.getServiceDef(), isSecure),
-                                                              Collections.singleton(interfaceName), null);
-      if (isSecure) {
-        providedService.setServiceMetadata(ArrowheadMain.secureServerMetadata);
-      }
-      ServiceRegistryEntry srEntry = new ServiceRegistryEntry(providedService, provider, service.getServiceURI());
-
-            if (registering) {
-                try {
-                    Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("register").build().toString(), "POST",
-                            srEntry);
-                } catch (ArrowheadException e) {
-                    if (e.getExceptionType() == ExceptionType.DUPLICATE_ENTRY) {
-                        Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT",
-                                srEntry);
-                        Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("register").build().toString(), "POST",
-                                srEntry);
-                    } else if (e.getExceptionType() == ExceptionType.UNAVAILABLE) {
-                        System.out.println("Service Registry is unavailable at the moment, retrying in 15 seconds...");
-                        try {
-                            Thread.sleep(15000);
-                            if (registeringTries == 3) {
-                                throw e;
-                            } else {
-                                registeringTries++;
-                                // noinspection ConstantConditions
-                                useSRService(registering);
-                            }
-                        } catch (InterruptedException e1) {
-                            e1.printStackTrace();
-                        }
-                    } else {
-                        throw new ArrowheadException(service.getServiceDef() + " service registration failed.", e);
-                    }
-                }
-                registeringTries = 1;
-            } else {
-                Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT", srEntry);
-            }
-        }
-    }
-
-    private String[] addSwaggerToPackages(String[] packages) {
-        packages = Arrays.copyOf(packages, packages.length + 1);
-        packages[packages.length - 1] = "io.swagger.v3.jaxrs2.integration.resources";
-        return packages;
-    }
-
-    public UaNodeContext getOpcUaNodeContext() {
-        return nodeContext;
-    }
-    
-    public UaNodeManager getOpcUaNodeManager() {
-        return nodeManager;
-    }
+	public ArrowheadOpcUaServer getArrowheadOpcUaServer() {
+		return arrowheaduaserver;
+	}
 }

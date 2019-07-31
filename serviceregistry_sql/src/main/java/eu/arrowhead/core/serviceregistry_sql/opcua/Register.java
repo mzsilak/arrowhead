@@ -55,13 +55,10 @@ public class Register extends AbstractMethodInvocationHandler {
                 out = "DuplicateEntryException";
             }
         } catch (JsonParseException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (JsonMappingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 

@@ -54,7 +54,6 @@ public class AuthorizationResource {
     return "This is the Authorization Resource.";
   }
 
-
   /**
    * Checks whether the consumer System can use a Service from a list of provider Systems.
    *
@@ -65,6 +64,34 @@ public class AuthorizationResource {
   @PUT
   @Path("intracloud")
   public Response isSystemAuthorized(@Valid IntraCloudAuthRequest request) {
+    return isSystemAuthorizedGeneric(request);
+  }
+
+  /**
+   * Checks whether an external Cloud can use a local Service.
+   *
+   * @return boolean
+   *
+   * @throws DataNotFoundException, BadPayloadException
+   */
+  @PUT
+  @Path("intercloud")
+  public Response isCloudAuthorized(@Valid InterCloudAuthRequest request) {
+    return isCloudAuthorizedGeneric(request);
+  }
+
+  /**
+   * Generates ArrowheadTokens for each consumer/service/provider trio
+   *
+   * @return TokenGenerationResponse
+   */
+  @PUT
+  @Path("token")
+  public Response tokenGeneration(@Valid TokenGenerationRequest request) {
+     return tokenGenerationGeneric(request);
+  }
+  
+  public Response isSystemAuthorizedGeneric(IntraCloudAuthRequest request) {
     restrictionMap.put("systemName", request.getConsumer().getSystemName());
     restrictionMap.put("address", request.getConsumer().getAddress());
     restrictionMap.put("port", request.getConsumer().getPort());
@@ -118,16 +145,7 @@ public class AuthorizationResource {
     return Response.status(Status.OK).entity(response).build();
   }
 
-  /**
-   * Checks whether an external Cloud can use a local Service.
-   *
-   * @return boolean
-   *
-   * @throws DataNotFoundException, BadPayloadException
-   */
-  @PUT
-  @Path("intercloud")
-  public Response isCloudAuthorized(@Valid InterCloudAuthRequest request) {
+  public Response isCloudAuthorizedGeneric(InterCloudAuthRequest request) {
     restrictionMap.put("operator", request.getCloud().getOperator());
     restrictionMap.put("cloudName", request.getCloud().getCloudName());
     ArrowheadCloud cloud = dm.get(ArrowheadCloud.class, restrictionMap);
@@ -160,14 +178,7 @@ public class AuthorizationResource {
     return Response.status(Status.OK).entity(new InterCloudAuthResponse(isAuthorized)).build();
   }
 
-  /**
-   * Generates ArrowheadTokens for each consumer/service/provider trio
-   *
-   * @return TokenGenerationResponse
-   */
-  @PUT
-  @Path("token")
-  public Response tokenGeneration(@Valid TokenGenerationRequest request) {
+  public Response tokenGenerationGeneric(TokenGenerationRequest request) {
     // Get the tokens from the service class (can throw run time exceptions)
     List<ArrowheadToken> tokens = TokenGenerationService.generateTokens(request);
     List<TokenData> tokenDataList = new ArrayList<>();

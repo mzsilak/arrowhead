@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.messages.ServiceQueryForm;
 
 public class ServiceRegistryOpcUaHelper {
     public ServiceRegistryEntry sreFromJsonString(String json)
@@ -36,8 +37,6 @@ public class ServiceRegistryOpcUaHelper {
         ArrowheadService ahService = new ArrowheadService(
                 actualObj.get("providedService").get("serviceDefinition").toString().replaceAll("\"", ""), interfaceSet,
                 metadata);
-
-        // "provider":{"systemName":"systemTestName","address":"localhost","port":8090,"authenticationInfo":""}
         String systemName = actualObj.get("provider").get("systemName").toString().replaceAll("\"", "");
         String address = actualObj.get("provider").get("address").toString().replaceAll("\"", "");
         Integer port = actualObj.get("provider").get("port").asInt();
@@ -47,5 +46,30 @@ public class ServiceRegistryOpcUaHelper {
         ServiceRegistryEntry sre = new ServiceRegistryEntry(ahService, ahSystem,
                 actualObj.get("serviceURI").toString().replaceAll("\"", ""));
         return sre;
+    }
+    
+    public ServiceQueryForm sqfFromJsonString(String json)
+            throws JsonParseException, JsonMappingException, IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode actualObj = mapper.readTree(json);
+        List<String> interfaces = mapper.readValue(actualObj.get("service").get("interfaces").toString(),
+                new TypeReference<List<String>>() {
+                });
+        Set<String> interfaceSet = new HashSet<String>();
+        for (String s : interfaces) {
+            interfaceSet.add(s);
+        }
+        TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {
+        };
+        Map<String, String> metadata = mapper
+                .readValue(actualObj.get("service").get("serviceMetadata").toString(), typeRef);
+        ArrowheadService ahService = new ArrowheadService(
+                actualObj.get("service").get("serviceDefinition").toString().replaceAll("\"", ""), interfaceSet,
+                metadata);
+        Boolean metadataSearch = actualObj.get("metadataSearch").asBoolean();
+        Boolean pingProviders = actualObj.get("pingProviders").asBoolean();
+        
+        ServiceQueryForm sqf = new ServiceQueryForm(ahService, metadataSearch, pingProviders);
+        return sqf;
     }
 }

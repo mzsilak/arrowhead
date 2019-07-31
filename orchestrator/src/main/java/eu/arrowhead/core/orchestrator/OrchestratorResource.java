@@ -42,7 +42,7 @@ public class OrchestratorResource {
   public String getIt() {
     return "Orchestrator got it!";
   }
-
+  
   /**
    * This method initiates the correct orchestration process determined by orchestration flags in the <tt>ServiceRequestForm</tt>. The returned
    * response (can) consists a list of endpoints where the requester System can consume the requested Service.
@@ -51,6 +51,19 @@ public class OrchestratorResource {
    */
   @POST
   public Response orchestrationProcess(@Valid ServiceRequestForm srf) {
+	  return orchestrationProcessGeneric(srf);
+  }
+  
+  /**
+   * Default Store orchestration process offered on a GET request, where the requester only has the consumer system ID.
+   */
+  @GET
+  @Path("{systemId}")
+  public Response storeOrchestrationProcess(@PathParam("systemId") long systemId) {
+    return storeOrchestrationProcessGeneric(systemId);
+  }
+
+  public Response orchestrationProcessGeneric(ServiceRequestForm srf) {
     srf.validateCrossParameterConstraints();
 
     OrchestrationResponse orchResponse;
@@ -72,12 +85,7 @@ public class OrchestratorResource {
     return Response.status(Status.OK).entity(orchResponse).build();
   }
 
-  /**
-   * Default Store orchestration process offered on a GET request, where the requester only has the consumer system ID.
-   */
-  @GET
-  @Path("{systemId}")
-  public Response storeOrchestrationProcess(@PathParam("systemId") long systemId) {
+  public Response storeOrchestrationProcessGeneric(long systemId) {
     ArrowheadSystem requesterSystem = new ArrowheadSystemApi().getSystem(systemId);
     log.info("Received a GET Store orchestration from: " + requesterSystem.getSystemName());
 
