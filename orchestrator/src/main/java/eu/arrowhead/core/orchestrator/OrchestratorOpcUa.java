@@ -6,7 +6,6 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 
 import eu.arrowhead.common.opcua.ArrowheadOpcUaServer;
-import eu.arrowhead.core.orchestrator.opcua.Orchestration;
 import eu.arrowhead.core.orchestrator.opcua.Store;
 
 public class OrchestratorOpcUa {
@@ -16,9 +15,6 @@ public class OrchestratorOpcUa {
 		namespaceIndex = ArrayUtils.indexOf(server.getNodeContext().getNamespaceTable().toArray(),
 				"urn:arrowhead:namespace");
 		UaFolderNode orchestratorFolder = server.addFolder(UShort.valueOf(namespaceIndex), "Orchestrator");
-		UaMethodNode orchestration = server.addMethodNode(UShort.valueOf(namespaceIndex), orchestratorFolder,
-				"orchestration");
-		server.addMethodNodeInNamespace(orchestration, orchestratorFolder, new Orchestration(orchestration));
 		UaMethodNode store = server.addMethodNode(UShort.valueOf(namespaceIndex), orchestratorFolder, "store");
 		server.addMethodNodeInNamespace(store, orchestratorFolder, new Store(store));
 	}

@@ -1,7 +1,6 @@
-package eu.arrowhead.core.orchestrator.opcua;
+package eu.arrowhead.core.authorization.opcua;
 
 import java.io.IOException;
-import java.util.List;
 
 import javax.ws.rs.core.Response;
 
@@ -19,38 +18,39 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-import eu.arrowhead.common.database.OrchestrationStore;
-import eu.arrowhead.common.database.ServiceRegistryEntry;
-import eu.arrowhead.common.messages.ServiceQueryResult;
 import eu.arrowhead.common.opcua.OpcUaHelper;
-import eu.arrowhead.core.orchestrator.api.StoreApi;
+import eu.arrowhead.core.authorization.AuthorizationApi;
 
-public class Store extends AbstractMethodInvocationHandler {
+public class AddSystemToAuthorized extends AbstractMethodInvocationHandler{
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	public Store(UaMethodNode node) {
+	public AddSystemToAuthorized(UaMethodNode node) {
 		super(node);
 	}
 
-	public static final Argument OrchestrationStoreInput = new Argument("OrchestrationStoreInput", Identifiers.String, ValueRanks.Scalar, null,
-			new LocalizedText("OrchestrationStoreInput"));
+	public static final Argument IntraCloudAuthEntry = new Argument("IntraCloudAuthEntry", Identifiers.String, ValueRanks.Scalar, null,
+			new LocalizedText("IntraCloudAuthEntry"));
+
+	public static final Argument ResponseStatus = new Argument("ResponseStatus", Identifiers.String, ValueRanks.Scalar, null,
+			new LocalizedText("ResponseStatus"));
 
 	@Override
 	public Argument[] getInputArguments() {
-		return new Argument[] { OrchestrationStoreInput };
+		return new Argument[] { IntraCloudAuthEntry };
 	}
 
 	@Override
 	public Argument[] getOutputArguments() {
-		return new Argument[] { };
+		return new Argument[] { ResponseStatus };
 	}
 
 	@Override
 	protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
+		Response out = null;
 		logger.debug("Invoking query() method of Object '{}'", invocationContext.getObjectId());
 		try {
-			new StoreApi().addStoreEntriesGeneric(
-					new OpcUaHelper().orchestrationStoreListFromJsonString(inputValues[0].getValue().toString()));
+			out = new AuthorizationApi().addSystemToAuthorizedGeneric(
+					new OpcUaHelper().icaeFromJsonString(inputValues[0].getValue().toString()));
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
@@ -59,6 +59,8 @@ public class Store extends AbstractMethodInvocationHandler {
 			e.printStackTrace();
 		}
 		
-		return null;
+		String res = out.getStatusInfo().getReasonPhrase();
+
+		return new Variant[] { new Variant(res) };
 	}
 }

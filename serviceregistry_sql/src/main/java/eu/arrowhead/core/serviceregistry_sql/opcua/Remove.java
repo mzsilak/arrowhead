@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+import eu.arrowhead.common.opcua.OpcUaHelper;
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
 public class Remove extends AbstractMethodInvocationHandler {
@@ -43,7 +44,7 @@ public class Remove extends AbstractMethodInvocationHandler {
         logger.debug("Invoking remove() method of Object '{}'", invocationContext.getObjectId());
         try {
             new ServiceRegistryResource().removeGeneric(
-                    new ServiceRegistryOpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
+                    new OpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
         } catch (JsonParseException e) {
             e.printStackTrace();
         } catch (JsonMappingException e) {

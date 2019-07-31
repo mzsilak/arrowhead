@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 import eu.arrowhead.common.exception.DuplicateEntryException;
+import eu.arrowhead.common.opcua.OpcUaHelper;
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
 public class Register extends AbstractMethodInvocationHandler {
@@ -49,7 +50,7 @@ public class Register extends AbstractMethodInvocationHandler {
         try {
             try {
                 new ServiceRegistryResource().registerGeneric(
-                        new ServiceRegistryOpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
+                        new OpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
                 out = "Success";
             } catch (DuplicateEntryException dee) {
                 out = "DuplicateEntryException";

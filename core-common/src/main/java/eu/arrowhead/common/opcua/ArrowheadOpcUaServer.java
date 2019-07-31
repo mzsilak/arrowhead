@@ -101,7 +101,7 @@ public class ArrowheadOpcUaServer {
 		SelfSignedHttpsCertificateBuilder httpsCertificateBuilder = new SelfSignedHttpsCertificateBuilder(httpsKeyPair);
 		httpsCertificateBuilder.setCommonName(HostnameUtil.getHostname());
 		HostnameUtil.getHostnames("0.0.0.0").forEach(httpsCertificateBuilder::addDnsName);
-		X509Certificate httpsCertificate = httpsCertificateBuilder.build();
+//		X509Certificate httpsCertificate = httpsCertificateBuilder.build();
 
 		UsernameIdentityValidator identityValidator = new UsernameIdentityValidator(true, authChallenge -> {
 			String username = authChallenge.getUsername();
@@ -133,7 +133,7 @@ public class ArrowheadOpcUaServer {
 						OpcUaServer.SDK_VERSION, "", DateTime.now()))
 				.setCertificateManager(certificateManager).setTrustListManager(trustListManager)
 				.setCertificateValidator(certificateValidator).setHttpsKeyPair(httpsKeyPair)
-				.setHttpsCertificate(httpsCertificate)
+//				.setHttpsCertificate(httpsCertificate)
 				.setIdentityValidator(new CompositeValidator(identityValidator, x509IdentityValidator))
 				.setProductUri("urn:arrowhead:opcua-sr-server").build();
 

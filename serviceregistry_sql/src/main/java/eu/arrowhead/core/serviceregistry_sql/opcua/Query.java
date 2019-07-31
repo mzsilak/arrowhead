@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import eu.arrowhead.common.database.ServiceRegistryEntry;
 import eu.arrowhead.common.messages.ServiceQueryResult;
+import eu.arrowhead.common.opcua.OpcUaHelper;
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
 public class Query extends AbstractMethodInvocationHandler {
@@ -51,7 +52,7 @@ public class Query extends AbstractMethodInvocationHandler {
 		logger.debug("Invoking query() method of Object '{}'", invocationContext.getObjectId());
 		try {
 			out = new ServiceRegistryResource().queryGeneric(
-					new ServiceRegistryOpcUaHelper().sqfFromJsonString(inputValues[0].getValue().toString()));
+					new OpcUaHelper().sqfFromJsonString(inputValues[0].getValue().toString()));
 			System.out.println("");
 		} catch (JsonParseException e) {
 			e.printStackTrace();
