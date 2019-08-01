@@ -53,7 +53,6 @@ public class Query extends AbstractMethodInvocationHandler {
 		try {
 			out = new ServiceRegistryResource().queryGeneric(
 					new OpcUaHelper().sqfFromJsonString(inputValues[0].getValue().toString()));
-			System.out.println("");
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
