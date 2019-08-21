@@ -1,0 +1,15 @@
+[Unit]
+Description=gams
+After=network.target mysql.target gams.service
+Requires=gams.service
+
+[Service]
+WorkingDirectory=/etc/arrowhead/systems/gams
+ExecStart=/usr/bin/java -jar /usr/share/arrowhead/gams.jar -d -daemon -tls
+TimeoutStopSec=5
+Type=simple
+User=arrowhead
+Group=arrowhead
+
+[Install]
+WantedBy=default.target

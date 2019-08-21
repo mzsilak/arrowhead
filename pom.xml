@@ -37,6 +37,7 @@
     <module>serviceregistry_sql</module>
     <module>systemregistry</module>
     <module>onboarding</module>
+    <module>gams</module>
   </modules>
 
   <properties>

@@ -1,9 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Onboarding Systems" type="CompoundRunConfigurationType">
-    <toRun name="02-CertificateAuthority" type="Application" />
-    <toRun name="02-SystemRegistry" type="Application" />
-    <toRun name="02-DeviceRegistry" type="Application" />
-    <toRun name="02-Onboarding" type="Application" />
-    <method v="2" />
-  </configuration>
-</component>

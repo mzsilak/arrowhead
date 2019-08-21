@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+  <Appenders>
+    <Console name="console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{ISO8601} [%-12.12tn] %-5p %-40.40c{..2.}:%-3L %m%n%throwable{full}"/>
+    </Console>
+    <!--RollingFile name="file" fileName="gams.log" filePattern="gams.%d{MM-dd}.log.gz"
+                 immediateFlush="false" append="false">
+        <PatternLayout pattern="%d{ISO8601} [%-12.12tn] %-5p %-40.40c{..2.}:%-3L %m%n%throwable{full}"/>
+        <Policies>
+            <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+        </Policies>
+        <DefaultRolloverStrategy max="14"/>
+    </RollingFile-->
+  </Appenders>
+  <Loggers>
+    <Logger name="eu.arrowhead" level="debug" additivity="true"/>
+    <Logger name="org" level="info" additivity="true"/>
+    <Logger name="com" level="info" additivity="true"/>
+
+    <Logger name="org.apache" level="info" additivity="true"/>
+
+    <Logger name="org.springframework.orm" level="info" additivity="true"/>
+    <Logger name="org.springframework.beans" level="info" additivity="true"/>
+
+    <Root level="debug">
+      <AppenderRef ref="console"/>
+    </Root>
+  </Loggers>
+</Configuration>

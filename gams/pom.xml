@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ This work is part of the Productive 4.0 innovation project, which receives grants from the
+  ~ European Commissions H2020 research and innovation programme, ECSEL Joint Undertaking
+  ~ (project no. 737459), the free state of Saxony, the German Federal Ministry of Education and
+  ~ national funding authorities from involved countries.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.0.1.RELEASE</version>
+    <relativePath/> <!-- lookup parent from repository -->
+  </parent>
+
+
+  <artifactId>arrowhead-gams</artifactId>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.version>3.8.0</maven.compiler.version>
+    <maven.dependency.version>2.10</maven.dependency.version>
+    <maven.jar.version>3.0.2</maven.jar.version>
+    <maven.resources.version>2.7</maven.resources.version>
+    <base.version>4.1.1</base.version>
+    <revision>${base.version}-SNAPSHOT</revision>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>eu.arrowhead</groupId>
+      <artifactId>arrowhead-core-common</artifactId>
+      <version>${revision}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- spring boot -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+
+    <!-- log4j2 -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jcl</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jul</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <defaultGoal>clean install</defaultGoal>
+    <plugins>
+
+      <plugin>
+        <groupId>pl.project13.maven</groupId>
+        <artifactId>git-commit-id-plugin</artifactId>
+        <version>2.2.5</version>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <phase>initialize</phase>
+          </execution>
+          <execution>
+            <id>validate-the-git-infos</id>
+            <goals>
+              <goal>validateRevision</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <injectAllReactorProjects>true</injectAllReactorProjects>
+          <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+          <prefix>git</prefix>
+          <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+          <dateFormatTimeZone>${user.timezone}</dateFormatTimeZone>
+          <verbose>false</verbose>
+          <generateGitPropertiesFile>false</generateGitPropertiesFile>
+          <skipPoms>false</skipPoms>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+          <failOnUnableToExtractRepoInfo>true</failOnUnableToExtractRepoInfo>
+          <runOnlyOnce>false</runOnlyOnce>
+          <excludeProperties>
+            <excludeProperty>git.user.*</excludeProperty>
+          </excludeProperties>
+          <includeOnlyProperties>
+          </includeOnlyProperties>
+          <abbrevLength>7</abbrevLength>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven.compiler.version}</version>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <showDeprecation>true</showDeprecation>
+              <showWarnings>true</showWarnings>
+              <compilerArguments>
+                <source>${maven.compiler.target}</source>
+                <target>${maven.compiler.source}</target>
+              </compilerArguments>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+        </configuration>
+      </plugin>
+      <!-- Make this jar executable -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven.jar.version}</version>
+        <configuration>
+          <!-- MainClass in mainfest make a executable jar -->
+          <archive>
+            <manifestEntries>
+              <Class-Path>config/</Class-Path>
+            </manifestEntries>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>eu.arrowhead.core.gams.GamsMain</mainClass>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <!-- Copy project dependency -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven.dependency.version}</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <!-- exclude junit, we need runtime dependency only -->
+              <outputDirectory>${basedir}/target/lib/</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven.resources.version}</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <!-- here the phase you need -->
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/config</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>config</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>jdeb</artifactId>
+        <groupId>org.vafer</groupId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>jdeb</goal>
+            </goals>
+            <configuration>
+              <snapshotExpand>true</snapshotExpand>
+              <snapshotTemplate>[YYMMddHHmm].${git.commit.id.abbrev}</snapshotTemplate>
+              <deb>target/${project.artifactId}_${revision}.deb</deb>
+              <verbose>true</verbose>
+              <controlDir>${basedir}/src/deb/control</controlDir>
+              <dataSet>
+
+                <data>
+                  <type>file</type>
+                  <src>${project.build.directory}/${project.build.finalName}.jar</src>
+                  <mapper>
+                    <type>perm</type>
+                    <prefix>/usr/share/arrowhead</prefix>
+                    <user>arrowhead</user>
+                    <filemode>755</filemode>
+                  </mapper>
+                </data>
+
+                <data>
+                  <type>link</type>
+                  <linkName>/usr/share/arrowhead/${project.artifactId}.jar</linkName>
+                  <linkTarget>/usr/share/arrowhead/${project.build.finalName}.jar</linkTarget>
+                </data>
+
+                <data>
+                  <type>file</type>
+                  <src>${project.basedir}/src/deb/gams.service</src>
+                  <mapper>
+                    <type>perm</type>
+                    <prefix>/etc/systemd/system</prefix>
+                    <filemode>664</filemode>
+                  </mapper>
+                </data>
+
+              </dataSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
