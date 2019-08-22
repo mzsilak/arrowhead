@@ -1,6 +1,9 @@
 package eu.arrowhead.gams.model;
 
-public interface TargetValue
+import java.util.function.Supplier;
+
+@FunctionalInterface
+public interface TargetValue extends Supplier<Long>
 {
-    Long getTargetValue();
+    Long get();
 }

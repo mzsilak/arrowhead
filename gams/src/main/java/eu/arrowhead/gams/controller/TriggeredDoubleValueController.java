@@ -5,7 +5,7 @@ import eu.arrowhead.gams.model.TargetValue;
 import java.util.function.Supplier;
 
 @FunctionalInterface
-public interface TriggeredController
+public interface TriggeredDoubleValueController
 {
-    Integer evaluate(Long inputValue, Supplier<Long> targetValue);
+    Integer evaluate(Long inputValue, Supplier<Long> upper, Supplier<Long> lower);
 }

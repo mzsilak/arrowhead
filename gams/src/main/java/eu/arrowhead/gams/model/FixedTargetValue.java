@@ -22,7 +22,7 @@ public class FixedTargetValue implements Comparable<FixedTargetValue>, TargetVal
     }
 
     @Override
-    public Long getTargetValue()
+    public Long get()
     {
         return value;
     }
