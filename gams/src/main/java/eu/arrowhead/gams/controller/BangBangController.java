@@ -33,9 +33,9 @@ public class BangBangController implements TriggeredController
     }
 
     @Override
-    public Integer evaluate(final Long inputValue, final Supplier<Long> targetValue)
+    public Long evaluate(final Long inputValue, final Supplier<Long> targetValue)
     {
-        int value = (int) (targetValue.get() - inputValue);
+        long value = (targetValue.get() - inputValue);
 
         if (inverse)
         { value = value * (-1); }

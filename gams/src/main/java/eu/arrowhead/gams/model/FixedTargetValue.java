@@ -1,6 +1,7 @@
 package eu.arrowhead.gams.model;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public class FixedTargetValue implements Comparable<FixedTargetValue>, TargetValue
 {
@@ -46,5 +47,13 @@ public class FixedTargetValue implements Comparable<FixedTargetValue>, TargetVal
     public int compareTo(final FixedTargetValue other)
     {
         return Long.compare(this.value, other.value);
+    }
+
+    @Override
+    public String toString()
+    {
+        return new StringJoiner(", ", FixedTargetValue.class.getSimpleName() + "[", "]")
+                .add("value=" + value)
+                .toString();
     }
 }

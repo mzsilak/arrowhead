@@ -33,7 +33,7 @@ public class DoubleSetPointController implements TriggeredDoubleValueController
     }
 
     @Override
-    public Integer evaluate(final Long inputValue, final Supplier<Long> upper, final Supplier<Long> lower)
+    public Long evaluate(final Long inputValue, final Supplier<Long> upper, final Supplier<Long> lower)
     {
         long upperValue = upper.get();
         long lowerValue = lower.get();
@@ -63,6 +63,6 @@ public class DoubleSetPointController implements TriggeredDoubleValueController
         if (inverse)
         { result = result * (-1); }
 
-        return (int) result;
+        return result;
     }
 }

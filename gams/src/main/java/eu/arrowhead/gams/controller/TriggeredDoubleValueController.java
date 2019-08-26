@@ -7,5 +7,5 @@ import java.util.function.Supplier;
 @FunctionalInterface
 public interface TriggeredDoubleValueController
 {
-    Integer evaluate(Long inputValue, Supplier<Long> upper, Supplier<Long> lower);
+    Long evaluate(Long inputValue, Supplier<Long> upper, Supplier<Long> lower);
 }

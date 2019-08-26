@@ -1,9 +1,7 @@
 package eu.arrowhead.gams.model;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class GradientTargetValue implements TargetValue
@@ -20,7 +18,7 @@ public class GradientTargetValue implements TargetValue
 
     /**
      * Defines the end value of the given interval relative to the given time values in the gradient.
-     * No {@link TimeBasedTargetValue} may have a bigger time value bigger than this.
+     * No {@link GradientFragment} may have a bigger time value bigger than this.
      */
     private long maximumTimeValue;
 
@@ -30,9 +28,9 @@ public class GradientTargetValue implements TargetValue
     private Interval interval;
 
     /**
-     * The actual gradient as a unique set of {@link TimeBasedTargetValue}s.
+     * The actual gradient as a unique set of {@link GradientFragment}s.
      */
-    private Set<TimeBasedTargetValue> gradient;
+    private Set<GradientFragment> gradient;
 
     private Clock clock;
 
@@ -100,13 +98,30 @@ public class GradientTargetValue implements TargetValue
         this.interval = interval;
     }
 
-    public void setGradient(final Set<TimeBasedTargetValue> gradient)
+    public void setGradient(final Set<GradientFragment> gradient)
     {
         this.gradient.clear();
         this.gradient.addAll(gradient);
+
+        // artificially create a new TimeBaseTargetValue at the end of the interval if there is non
+        GradientFragment firstValue = null;
+        GradientFragment lastValue = null;
+        for (GradientFragment value : gradient)
+        {
+            if (Objects.isNull(firstValue))
+            {
+                firstValue = value;
+            }
+            lastValue = value;
+        }
+        Objects.requireNonNull(firstValue, "There must be at least one value in the gradient");
+        if (lastValue.getTime() != maximumTimeValue)
+        {
+            this.gradient.add(new GradientFragment(maximumTimeValue, firstValue.getValue()));
+        }
     }
 
-    public Set<TimeBasedTargetValue> getGradient()
+    public Set<GradientFragment> getGradient()
     {
         return Collections.unmodifiableSet(gradient);
     }
@@ -137,12 +152,13 @@ public class GradientTargetValue implements TargetValue
         // proportion calculation of target time. where are we based on the whole interval duration
         final double targetTime = (maximumTimeValue * secondsSinceIntervalStart) / (double) secondsInInterval;
 
-        TimeBasedTargetValue current = null;
-        TimeBasedTargetValue next = null;
+        GradientFragment current = null;
+        GradientFragment next = null;
 
         // find the 2 target values which are before and after our target time
-        for (final TimeBasedTargetValue targetValue : gradient)
+        for (final GradientFragment targetValue : gradient)
         {
+            current = next;
             next = targetValue;
 
             if (Objects.isNull(current))
@@ -170,5 +186,13 @@ public class GradientTargetValue implements TargetValue
         }
 
         return current.getValue();
+    }
+
+    @Override
+    public String toString()
+    {
+        return new StringJoiner(", ", GradientTargetValue.class.getSimpleName() + "[", "]")
+                .add("currentValue=" + get())
+                .toString();
     }
 }

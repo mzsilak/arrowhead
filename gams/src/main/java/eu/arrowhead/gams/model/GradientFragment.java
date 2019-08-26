@@ -1,18 +1,19 @@
 package eu.arrowhead.gams.model;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
-public class TimeBasedTargetValue implements Comparable<TimeBasedTargetValue>
+public class GradientFragment implements Comparable<GradientFragment>
 {
     private long time;
     private long value;
 
-    public TimeBasedTargetValue()
+    public GradientFragment()
     {
         super();
     }
 
-    public TimeBasedTargetValue(final long time, final long value)
+    public GradientFragment(final long time, final long value)
     {
         this.time = time;
         this.value = value;
@@ -43,7 +44,7 @@ public class TimeBasedTargetValue implements Comparable<TimeBasedTargetValue>
     {
         if (this == o) { return true; }
         if (o == null || getClass() != o.getClass()) { return false; }
-        final TimeBasedTargetValue that = (TimeBasedTargetValue) o;
+        final GradientFragment that = (GradientFragment) o;
         return this.time == that.time &&
                 this.value == that.value;
     }
@@ -55,8 +56,17 @@ public class TimeBasedTargetValue implements Comparable<TimeBasedTargetValue>
     }
 
     @Override
-    public int compareTo(final TimeBasedTargetValue other)
+    public int compareTo(final GradientFragment other)
     {
         return Long.compare(this.time, other.time);
+    }
+
+    @Override
+    public String toString()
+    {
+        return new StringJoiner(", ", GradientFragment.class.getSimpleName() + "[", "]")
+                .add("time=" + time)
+                .add("value=" + value)
+                .toString();
     }
 }

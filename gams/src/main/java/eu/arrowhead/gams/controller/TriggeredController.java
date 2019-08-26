@@ -7,5 +7,5 @@ import java.util.function.Supplier;
 @FunctionalInterface
 public interface TriggeredController
 {
-    Integer evaluate(Long inputValue, Supplier<Long> targetValue);
+    Long evaluate(Long inputValue, Supplier<Long> targetValue);
 }
