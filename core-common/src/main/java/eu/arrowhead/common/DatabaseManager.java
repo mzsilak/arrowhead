@@ -19,7 +19,8 @@ import java.util.ServiceConfigurationError;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -40,7 +41,7 @@ public class DatabaseManager {
   private static String dbAddress;
   private static String dbUser;
   private static String dbPassword;
-  private static final Logger log = Logger.getLogger(DatabaseManager.class.getName());
+  private static final Logger log = LogManager.getLogger(DatabaseManager.class.getName());
 
   static {
     if (prop.containsKey("db_address") || prop.containsKey("log4j.appender.DB.URL")) {
@@ -49,7 +50,7 @@ public class DatabaseManager {
         dbUser = prop.getProperty("db_user");
         dbPassword = prop.getProperty("db_password");
       } else {
-        dbAddress = prop.getProperty("log4j.appender.DB.URL", "jdbc:mysql://127.0.0.1:3306/log");
+        dbAddress = prop.getProperty("log4j.appender.DB.URL", "jdbc:mysql://127.0.0.1:3306/log?serverTimezone=UTC");
         dbUser = prop.getProperty("log4j.appender.DB.user", "root");
         dbPassword = prop.getProperty("log4j.appender.DB.password", "root");
       }

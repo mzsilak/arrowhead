@@ -14,7 +14,7 @@
   <parent>
     <artifactId>core</artifactId>
     <groupId>eu.arrowhead</groupId>
-    <version>${revision}</version>
+    <version>4.1.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>arrowhead-eventhandler</artifactId>
@@ -24,7 +24,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.version>3.8.0</maven.compiler.version>
-    <maven.dependency.version>2.10</maven.dependency.version>
+    <maven.dependency.version>3.1.1</maven.dependency.version>
     <maven.jar.version>3.0.2</maven.jar.version>
     <maven.resources.version>2.7</maven.resources.version>
   </properties>
@@ -135,7 +135,7 @@
             <configuration>
               <snapshotExpand>true</snapshotExpand>
               <snapshotTemplate>[YYMMddHHmm].${git.commit.id.abbrev}</snapshotTemplate>
-              <deb>target/${project.artifactId}_${revision}.deb</deb>
+              <deb>target/${project.artifactId}_${project.version}.deb</deb>
               <verbose>true</verbose>
               <controlDir>${basedir}/src/deb/control</controlDir>
               <dataSet>

@@ -27,7 +27,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This is the REST resource for the Event Handler Core System.
@@ -37,7 +38,7 @@ import org.apache.log4j.Logger;
 @Produces(MediaType.APPLICATION_JSON)
 public class EventHandlerResource {
 
-  private static final Logger log = Logger.getLogger(EventHandlerResource.class.getName());
+  private static final Logger log = LogManager.getLogger(EventHandlerResource.class.getName());
 
   @GET
   @Produces(MediaType.TEXT_PLAIN)

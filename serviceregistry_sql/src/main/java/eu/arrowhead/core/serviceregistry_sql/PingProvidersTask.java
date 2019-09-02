@@ -12,11 +12,12 @@ import eu.arrowhead.common.database.ServiceRegistryEntry;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.TimerTask;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class PingProvidersTask extends TimerTask {
 
-  private static final Logger log = Logger.getLogger(PingProvidersTask.class.getName());
+  private static final Logger log = LogManager.getLogger(PingProvidersTask.class.getName());
 
   @Override
   public void run() {

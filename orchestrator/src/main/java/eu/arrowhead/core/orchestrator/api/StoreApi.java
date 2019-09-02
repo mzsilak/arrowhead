@@ -35,7 +35,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.log4j.Logger;
+import javax.ws.rs.core.Response.Status;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("orchestrator/mgmt/store")
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,7 +45,7 @@ import org.apache.log4j.Logger;
 public class StoreApi {
 
   private final HashMap<String, Object> restrictionMap = new HashMap<>();
-  private static final Logger log = Logger.getLogger(StoreApi.class.getName());
+  private static final Logger log = LogManager.getLogger(StoreApi.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
 
   @GET

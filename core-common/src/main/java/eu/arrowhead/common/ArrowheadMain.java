@@ -34,8 +34,8 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -43,6 +43,7 @@ import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator.GenericStoreException;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 public abstract class ArrowheadMain {
@@ -63,15 +64,15 @@ public abstract class ArrowheadMain {
   private String base64PublicKey;
   private int registeringTries = 1;
 
-  private static final Logger log = Logger.getLogger(ArrowheadMain.class.getName());
+  private static final Logger log = LogManager.getLogger(ArrowheadMain.class.getName());
 
   {
     DatabaseManager.init();
-    PropertyConfigurator.configure(props);
   }
 
   protected void init(CoreSystem coreSystem, String[] args, Set<Class<?>> classes, String[] packages) {
     System.out.println("Working directory: " + System.getProperty("user.dir"));
+    log.info("Working directory: " + System.getProperty("user.dir"));
     packages = addSwaggerToPackages(packages);
     this.coreSystem = coreSystem;
 
@@ -151,6 +152,11 @@ public abstract class ArrowheadMain {
     final ResourceConfig config = new ResourceConfig();
     config.registerClasses(classes);
     config.packages(packages);
+    if (Boolean.valueOf(System.getProperty("debug_mode", "false")))
+      config.register(new LoggingFeature(
+          org.apache.logging.log4j.jul.LogManager.getLogManager().getLogger(this.getClass().getName()),
+          LoggingFeature.Verbosity.PAYLOAD_ANY
+      ));
 
     URI uri = UriBuilder.fromUri(baseUri).build();
     try {
@@ -169,6 +175,11 @@ public abstract class ArrowheadMain {
     final ResourceConfig config = new ResourceConfig();
     config.registerClasses(classes);
     config.packages(packages);
+    if (Boolean.valueOf(System.getProperty("debug_mode", "false")))
+      config.register(new LoggingFeature(
+          org.apache.logging.log4j.jul.LogManager.getLogManager().getLogger(this.getClass().getName()),
+          LoggingFeature.Verbosity.PAYLOAD_ANY
+      ));
 
     String keystorePath = props.getProperty("keystore");
     String keystorePass = props.getProperty("keystorepass");
