@@ -1,4 +1,4 @@
-package eu.arrowhead.gams.model;
+package eu.arrowhead.gams.api.model;
 
 import com.google.gson.annotations.SerializedName;
 

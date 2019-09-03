@@ -12,7 +12,7 @@ import java.time.ZoneOffset;
 import java.util.Set;
 import java.util.TreeSet;
 
-class PIDControllerTest
+class PIDLoopEvaluatorTest
 {
 
     private static Instant instant;
@@ -31,7 +31,7 @@ class PIDControllerTest
         long inputValue = 0;
         double factor = 1;
 
-        final PIDController controller = new PIDController();
+        final PIDLoopEvaluator controller = new PIDLoopEvaluator();
         final GradientTargetValue gradientTargetValue = setupTargetValue();
         gradientTargetValue.setClock(Clock.fixed(currTime, ZoneOffset.UTC));
         controller.setClock(Clock.fixed(currTime, ZoneOffset.UTC));

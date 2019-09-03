@@ -1,23 +1,21 @@
 package eu.arrowhead.gams.controller;
 
-import eu.arrowhead.gams.model.TargetValue;
-
 import java.util.function.Supplier;
 
 /**
- * A Double-SetPoint controller is similar to the {@link BangBangController}, however it has two set points on which it switches the output.
+ * A Double-SetPoint controller is similar to the {@link BangBangEvaluator}, however it has two set points on which it switches the output.
  * It returns a positive number if the input is below the lower set point and a negative if the number exceeds the upper set point. It returns 0 in all other cases.
  */
-public class DoubleSetPointController implements TriggeredDoubleValueController
+public class DoubleSetPointEvaluator implements DoubleValueEvaluator
 {
     private boolean inverse = false;
 
-    public DoubleSetPointController()
+    public DoubleSetPointEvaluator()
     {
         super();
     }
 
-    public DoubleSetPointController(final boolean inverse)
+    public DoubleSetPointEvaluator(final boolean inverse)
     {
         this.inverse = inverse;
     }

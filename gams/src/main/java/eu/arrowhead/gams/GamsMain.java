@@ -10,7 +10,6 @@ public class GamsMain {
 
     public GamsMain() {
         super();
-        System.out.println("test");
     }
 
     public static void main(String[] args) {

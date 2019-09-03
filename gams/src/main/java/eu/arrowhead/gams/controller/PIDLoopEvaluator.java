@@ -9,7 +9,7 @@ import java.util.function.Supplier;
  * A PID controller continuously calculates an error value e(t) as the difference between a desired {@link eu.arrowhead.gams.model.TargetValue} and a measured process variable (PV)
  * and applies a correction based on proportional, integral, and derivative terms (denoted P, I, and D respectively), hence the name. The maximum supported frequency is 1000 Hz.
  */
-public class PIDController implements TriggeredController
+public class PIDLoopEvaluator implements SingleSetPointEvaluator
 {
     private long lastTime = 0;
     private long lastError = 0;
@@ -21,7 +21,7 @@ public class PIDController implements TriggeredController
 
     private Clock clock;
 
-    public PIDController()
+    public PIDLoopEvaluator()
     {
         super();
     }
