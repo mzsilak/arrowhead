@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface GamsInstanceRepository extends AbstractGamsRepository<GamsInstanceModel> {
 
+    Iterable<GamsInstanceModel> findByNameLike(String namePart);
 }

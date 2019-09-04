@@ -3,20 +3,26 @@ package eu.arrowhead.gams.persistence.model;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
+import org.hibernate.annotations.GenericGenerator;
 
 @MappedSuperclass
 public abstract class AbstractGamsModel {
 
     @Id
+    @GeneratedValue
     private Long id;
 
     @Version
     private Long version;
 
-    @Column(name = "uuid", nullable = false, unique = false, updatable = false)
+    @Column(name = "uuid", nullable = false, unique = false, updatable = false, columnDefinition = "BINARY(16)")
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
     private UUID uuid;
 
     public AbstractGamsModel() {

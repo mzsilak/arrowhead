@@ -10,5 +10,5 @@ import org.springframework.data.repository.NoRepositoryBean;
 @NoRepositoryBean
 public interface AbstractGamsRepository<T extends AbstractGamsModel> extends CrudRepository<T, Long> {
 
-    T findOneByUUID(final UUID uuid) throws EntityNotFoundException;
+    T findOneByUuid(final UUID uuid) throws EntityNotFoundException;
 }

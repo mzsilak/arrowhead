@@ -1,8 +1,12 @@
 package eu.arrowhead.gams.persistence.model;
 
+import eu.arrowhead.gams.api.model.GamsInstanceState;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -20,10 +24,27 @@ public class GamsInstanceModel extends AbstractGamsModel {
     private LocalDateTime creationDate;
 
     @Column(name = "state", unique = false, updatable = true)
+    @Enumerated(EnumType.STRING)
     private GamsInstanceState state;
 
     public GamsInstanceModel() {
         super();
+    }
+
+    public GamsInstanceModel(String name, String description, LocalDateTime creationDate, GamsInstanceState state) {
+        this.name = name;
+        this.description = description;
+        this.creationDate = creationDate;
+        this.state = state;
+    }
+
+    public GamsInstanceModel(UUID uuid, String name, String description, LocalDateTime creationDate,
+                             GamsInstanceState state) {
+        this.name = name;
+        this.description = description;
+        this.creationDate = creationDate;
+        this.state = state;
+        setUuid(uuid);
     }
 
     public String getName() {
@@ -48,6 +69,14 @@ public class GamsInstanceModel extends AbstractGamsModel {
 
     public void setCreationDate(LocalDateTime creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public GamsInstanceState getState() {
+        return state;
+    }
+
+    public void setState(GamsInstanceState state) {
+        this.state = state;
     }
 
     @Override

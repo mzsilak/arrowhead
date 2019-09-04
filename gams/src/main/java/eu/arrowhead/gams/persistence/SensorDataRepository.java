@@ -1,7 +1,7 @@
 package eu.arrowhead.gams.persistence;
 
 import eu.arrowhead.gams.persistence.model.SensorDataModel;
-import eu.arrowhead.gams.persistence.model.SensorDataState;
+import eu.arrowhead.gams.api.model.SensorDataState;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;

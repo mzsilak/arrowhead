@@ -17,8 +17,10 @@
     <Logger name="eu.arrowhead" level="debug" additivity="true"/>
     <Logger name="org" level="info" additivity="true"/>
     <Logger name="com" level="info" additivity="true"/>
+    <Logger name="springfox" level="info" additivity="true"/>
 
     <Logger name="org.apache" level="info" additivity="true"/>
+    <Logger name="org.springframework" level="info" additivity="true"/>
 
     <Logger name="org.springframework.orm" level="info" additivity="true"/>
     <Logger name="org.springframework.beans" level="info" additivity="true"/>

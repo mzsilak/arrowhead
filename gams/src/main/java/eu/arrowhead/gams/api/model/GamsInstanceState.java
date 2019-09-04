@@ -1,4 +1,4 @@
-package eu.arrowhead.gams.persistence.model;
+package eu.arrowhead.gams.api.model;
 
 public enum GamsInstanceState {
 

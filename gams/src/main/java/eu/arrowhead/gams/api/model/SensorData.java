@@ -1,45 +1,30 @@
 package eu.arrowhead.gams.api.model;
 
-import io.swagger.v3.oas.annotations.Parameter;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.StringJoiner;
 
 public class SensorData {
 
-    @Parameter(description = "The id of the source sensor.", required = false)
     private String sensorId;
-
-    @Parameter(description = "The timestamp of event generation with timezone. Defaults to \"now\" in UTC.",
-        required = false)
-    private ZonedDateTime timestamp = ZonedDateTime.now(ZoneOffset.UTC);
-
-    @Parameter(description = "The value which was read by the sensor.", required = true)
+    private ZonedDateTime timestamp;
     private Long value;
-
-    @Parameter(description = "The magnitude of the data. "
-        + "Example: A value of 32700 with a magnitude of 1000 indicates that the actual value was 32.7", required =
-        false)
-    private Long magnitude = 1L;
-
-    @Parameter(description = "The unit in which the value was given", required = false)
+    private Long magnitude;
     private String unit;
+    private SensorDataState state;
 
     public SensorData() {
         super();
     }
 
-    public SensorData(Long value) {
-        this.value = value;
-    }
-
-    public SensorData(String sensorId, ZonedDateTime timestamp, Long value, Long magnitude, String unit) {
+    public SensorData(String sensorId, ZonedDateTime timestamp, Long value, Long magnitude, String unit,
+                      SensorDataState state) {
         this.sensorId = sensorId;
         this.timestamp = timestamp;
         this.value = value;
         this.magnitude = magnitude;
         this.unit = unit;
+        this.state = state;
     }
 
     public String getSensorId() {

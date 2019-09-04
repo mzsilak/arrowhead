@@ -1,9 +1,12 @@
 package eu.arrowhead.gams.persistence.model;
 
+import eu.arrowhead.gams.api.model.SensorDataState;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
 @Entity
@@ -26,6 +29,7 @@ public class SensorDataModel extends AbstractGamsModel implements Comparable<Sen
     private String unit;
 
     @Column(name = "state", nullable = false, updatable = true)
+    @Enumerated(EnumType.STRING)
     private SensorDataState state;
 
     public SensorDataModel() {
