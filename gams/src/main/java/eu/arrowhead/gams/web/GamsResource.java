@@ -1,11 +1,13 @@
-package eu.arrowhead.gams;
+package eu.arrowhead.gams.web;
 
+import eu.arrowhead.gams.GamsService;
 import eu.arrowhead.gams.api.model.ErrorResponse;
 import eu.arrowhead.gams.api.model.GamsInstance;
 import eu.arrowhead.gams.api.model.request.ModifyGamsInstanceRequest;
 import eu.arrowhead.gams.api.model.request.ModifyGamsInstanceStateRequest;
 import eu.arrowhead.gams.errors.InstanceNotFoundException;
 import eu.arrowhead.gams.errors.InvalidModificationException;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -34,6 +36,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping(value = "/instance", consumes = MediaType.APPLICATION_JSON_VALUE, produces =
     MediaType.APPLICATION_JSON_VALUE)
+@Api(tags = {"Gams"})
 public class GamsResource {
 
     private final Logger logger = LogManager.getLogger();
@@ -49,17 +52,16 @@ public class GamsResource {
     @ApiResponses({@ApiResponse(code = 200, response = GamsInstance.class, responseContainer = "Set", message = "OK"),
         @ApiResponse(code = 400, response = ErrorResponse.class, message = "The specified instance does not exist"),
         @ApiResponse(code = 500, response = ErrorResponse.class, message = "Internal Error")})
-    public ResponseEntity list(@RequestParam(value = "name", required = false) final String name,
-                               @RequestParam(defaultValue = "UTC", required = false) final ZoneId timeZone) {
+    public ResponseEntity list(@RequestParam(value = "name", required = false) final String name) {
         ResponseEntity responseEntity;
         try {
             final Set<GamsInstance> set;
             if (StringUtils.hasText(name)) {
                 logger.info("Searching for  GAMS instances with name like '{}'", name);
-                set = gamsService.searchByName(name, timeZone);
+                set = gamsService.searchGamsInstanceByName(name);
             } else {
                 logger.info("Listing all GAMS instances");
-                set = gamsService.list(timeZone);
+                set = gamsService.getGamsInstances();
             }
 
             responseEntity = new ResponseEntity<>(set, HttpStatus.OK);
@@ -75,13 +77,11 @@ public class GamsResource {
     @ApiResponses({@ApiResponse(code = 200, response = GamsInstance.class, message = "OK"),
         @ApiResponse(code = 400, response = ErrorResponse.class, message = "The specified instance does not exist"),
         @ApiResponse(code = 500, response = ErrorResponse.class, message = "Internal Error")})
-    public ResponseEntity readGamsInstance(@PathVariable final UUID uuid,
-                                           @RequestParam(defaultValue = "UTC", required = false)
-                                           final ZoneId timeZone) {
+    public ResponseEntity readGamsInstance(@PathVariable final UUID uuid) {
         ResponseEntity responseEntity;
         try {
             logger.info("Reading GAMS instances with UUID '{}'", uuid);
-            final GamsInstance instance = gamsService.read(uuid, timeZone);
+            final GamsInstance instance = gamsService.getGamsInstance(uuid);
             responseEntity = new ResponseEntity<>(instance, HttpStatus.OK);
         } catch (InstanceNotFoundException e) {
             logger.warn(e.getMessage());
@@ -102,7 +102,7 @@ public class GamsResource {
         ResponseEntity responseEntity;
         try {
             logger.info("Processing create GAMS instances request '{}'", request);
-            final UUID uuid = gamsService.create(request);
+            final UUID uuid = gamsService.createGamsInstance(request);
             final URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + uuid.toString())
                                                        .queryParam("timeZone", request.getCreationDate().getZone())
                                                        .build().toUri();
@@ -124,7 +124,7 @@ public class GamsResource {
         ResponseEntity responseEntity;
         try {
             logger.info("Updating GAMS instance '{}' with {}", uuid, request);
-            gamsService.update(uuid, request);
+            gamsService.updateGamsInstance(uuid, request);
             final URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + uuid.toString())
                                                        .queryParam("timeZone", request.getCreationDate().getZone())
                                                        .build().toUri();
@@ -150,7 +150,7 @@ public class GamsResource {
         ResponseEntity responseEntity;
         try {
             logger.info("Updating GAMS instance '{}' - new state: {}", uuid, request);
-            gamsService.setState(uuid, request.getNewState());
+            gamsService.setGamsInstanceState(uuid, request.getNewState());
             responseEntity = ResponseEntity.ok().build();
         } catch (InstanceNotFoundException e) {
             logger.warn(e.getMessage());
@@ -173,7 +173,7 @@ public class GamsResource {
         ResponseEntity responseEntity;
         try {
             logger.info("Deleting GAMS instance with uuid '{}'", uuid);
-            gamsService.delete(uuid);
+            gamsService.deleteGamsInstance(uuid);
             responseEntity = new ResponseEntity<>(HttpStatus.OK);
         } catch (InstanceNotFoundException e) {
             logger.warn(e.getMessage());

@@ -58,6 +58,7 @@ public class GamsPersistenceServiceImpl implements GamsPersistenceService {
     }
 
     @Override
+    @Deprecated
     public SensorDataModel mapSensorData(final UUID uuid, final SensorData data) {
         GamsUtils.verify(uuid);
         GamsUtils.verify(data);
@@ -102,9 +103,9 @@ public class GamsPersistenceServiceImpl implements GamsPersistenceService {
     }
 
     @Override
-    public UUID persistGamsInstance(final GamsInstanceModel model) {
+    public GamsInstanceModel persistGamsInstance(final GamsInstanceModel model) {
         GamsUtils.verify(model);
-        return instanceRepository.save(model).getUuid();
+        return instanceRepository.save(model);
     }
 
     @Override

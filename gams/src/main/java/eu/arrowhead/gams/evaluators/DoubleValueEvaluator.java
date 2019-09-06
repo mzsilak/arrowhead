@@ -1,6 +1,4 @@
-package eu.arrowhead.gams.controller;
-
-import eu.arrowhead.gams.model.TargetValue;
+package eu.arrowhead.gams.evaluators;
 
 import java.util.function.Supplier;
 

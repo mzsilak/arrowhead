@@ -1,4 +1,4 @@
-package eu.arrowhead.gams.controller;
+package eu.arrowhead.gams.evaluators;
 
 import java.util.function.Supplier;
 

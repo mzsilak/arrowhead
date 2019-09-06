@@ -7,14 +7,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
-@Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories
 public class GamsStandaloneMain {
-
-    public GamsStandaloneMain() {
-        super();
-    }
 
     public static void main(String[] args) {
         SpringApplication.run(GamsStandaloneMain.class, args);

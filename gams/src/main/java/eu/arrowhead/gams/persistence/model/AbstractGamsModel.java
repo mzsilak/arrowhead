@@ -27,6 +27,7 @@ public abstract class AbstractGamsModel {
 
     public AbstractGamsModel() {
         super();
+        uuid = UUID.randomUUID();
     }
 
     public Long getId() {

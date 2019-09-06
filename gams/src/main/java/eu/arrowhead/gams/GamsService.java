@@ -2,6 +2,7 @@ package eu.arrowhead.gams;
 
 import eu.arrowhead.gams.api.model.GamsInstance;
 import eu.arrowhead.gams.api.model.GamsInstanceState;
+import eu.arrowhead.gams.api.model.Sensor;
 import eu.arrowhead.gams.api.model.request.ModifyGamsInstanceRequest;
 import eu.arrowhead.gams.errors.InstanceNotFoundException;
 import eu.arrowhead.gams.errors.InvalidModificationException;
@@ -11,18 +12,20 @@ import java.util.UUID;
 
 public interface GamsService {
 
-    Set<GamsInstance> list(final ZoneId targetZone);
+    Set<GamsInstance> getGamsInstances();
 
-    UUID create(final ModifyGamsInstanceRequest instance);
+    UUID createGamsInstance(final ModifyGamsInstanceRequest instance);
 
-    void delete(final UUID uuid) throws InstanceNotFoundException, InvalidModificationException;
+    void deleteGamsInstance(final UUID uuid) throws InstanceNotFoundException, InvalidModificationException;
 
-    void update(final UUID uuid, final ModifyGamsInstanceRequest instance)
+    void updateGamsInstance(final UUID uuid, final ModifyGamsInstanceRequest instance)
         throws InstanceNotFoundException, InvalidModificationException;
 
-    void setState(final UUID uuid, final GamsInstanceState state) throws InstanceNotFoundException;
+    void setGamsInstanceState(final UUID uuid, final GamsInstanceState state) throws InstanceNotFoundException;
 
-    GamsInstance read(final UUID uuid, final ZoneId targetZone) throws InstanceNotFoundException;
+    GamsInstance getGamsInstance(final UUID uuid) throws InstanceNotFoundException;
 
-    Set<GamsInstance> searchByName(final String namePart, final ZoneId targetZone);
+    Set<GamsInstance> searchGamsInstanceByName(final String namePart);
+
+    Set<Sensor> getSensors(final UUID uuid) throws InstanceNotFoundException;
 }

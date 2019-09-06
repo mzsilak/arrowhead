@@ -11,6 +11,7 @@ public interface GamsPersistenceService {
 
     SensorDataModel persistSensorData(SensorDataModel sensorData) throws InstanceNotFoundException;
 
+    @Deprecated
     SensorDataModel mapSensorData(UUID uuid, SensorData data);
 
     Set<SensorDataModel> querySensorData(UUID uuid, Integer size) throws InstanceNotFoundException;
@@ -19,7 +20,7 @@ public interface GamsPersistenceService {
 
     Iterable<GamsInstanceModel> getGamsInstances();
 
-    UUID persistGamsInstance(GamsInstanceModel model);
+    GamsInstanceModel persistGamsInstance(GamsInstanceModel model);
 
     void deleteGamsInstance(UUID uuid) throws InstanceNotFoundException;
 

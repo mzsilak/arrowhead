@@ -4,9 +4,15 @@ import eu.arrowhead.gams.api.model.SensorData;
 import eu.arrowhead.gams.api.model.request.ModifyGamsInstanceRequest;
 import eu.arrowhead.gams.persistence.model.GamsInstanceModel;
 import eu.arrowhead.gams.persistence.model.SensorDataModel;
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class GamsUtils {
 
@@ -36,5 +42,17 @@ public class GamsUtils {
 
     public static void verify(GamsInstanceModel model) {
         Objects.requireNonNull(model, "GamsInstanceModel must not be null");
+    }
+
+    public static URI uriFromPath(final String path) {
+        return uriBuilderFromPath(path).build().toUri();
+    }
+
+    public static UriComponentsBuilder uriBuilderFromPath(final String path) {
+        return ServletUriComponentsBuilder.fromCurrentRequest().path(path);
+    }
+
+    public static LocalDateTime toLocalDate(ZonedDateTime creationDate) {
+        return LocalDateTime.ofInstant(creationDate.toInstant(), ZoneOffset.UTC);
     }
 }

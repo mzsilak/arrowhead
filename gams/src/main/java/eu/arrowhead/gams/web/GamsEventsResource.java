@@ -1,10 +1,12 @@
-package eu.arrowhead.gams;
+package eu.arrowhead.gams.web;
 
+import eu.arrowhead.gams.GamsEventsService;
 import eu.arrowhead.gams.api.model.ErrorResponse;
 import eu.arrowhead.gams.api.model.SenMLEvent;
 import eu.arrowhead.gams.api.model.SensorData;
 import eu.arrowhead.gams.api.model.request.SensorDataEventRequest;
 import eu.arrowhead.gams.errors.InstanceNotFoundException;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(value = "/events", consumes = MediaType.APPLICATION_JSON_VALUE, produces =
     MediaType.APPLICATION_JSON_VALUE)
+@Api(tags = {"Sensors"})
 public class GamsEventsResource {
 
     private final Logger logger = LogManager.getLogger();
@@ -39,7 +42,7 @@ public class GamsEventsResource {
     }
 
     @GetMapping(value = "/{uuid}", consumes = MediaType.ALL_VALUE)
-    @ApiOperation(value = "Returns the latest SensorEvents for a specific instance")
+    @ApiOperation(value = "Returns the latest SensorEvents for a specific gams instance")
     @ApiResponses({@ApiResponse(code = 200, response = SensorData.class, responseContainer = "Set", message = "OK"),
         @ApiResponse(code = 400, response = ErrorResponse.class, message = "The specified instance does not exist"),
         @ApiResponse(code = 500, response = ErrorResponse.class, message = "Internal Error")})
