@@ -1,6 +1,8 @@
 [![Build Status](https://api.travis-ci.com/arrowhead-f/core-java.svg?branch=develop)](https://travis-ci.com/arrowhead-f/core-java)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?colorB=green)](https://github.com/arrowhead-f/core-java/blob/master/LICENSE)
 
+# This repository is archived, for further development and usage please refer to the [Core-Java-Spring](https://github.com/arrowhead-f/core-java-spring) repository!
+
 # Arrowhead Framework 4.1.2
 
 [Arrowhead](http://www.arrowhead.eu/) (and its continuation, [Productive4.0](https://productive40.eu/)) is an ambitious holistic innovation project,
