@@ -53,6 +53,7 @@ public class ServiceRegistryResource {
         return Response.status(Response.Status.OK).build();
       } else {
         return Response.status(Response.Status.RESET_CONTENT).build();
+
       }
     } catch (Exception e) {
       log.error("SR Registration failed:" + e.getMessage());

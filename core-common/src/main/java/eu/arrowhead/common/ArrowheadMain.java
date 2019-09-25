@@ -94,6 +94,7 @@ public abstract class ArrowheadMain {
         case "-tls":
           System.setProperty("is_secure", "true");
           isSecure = true;
+          Utility.setSecure(true);
           break;
       }
     }

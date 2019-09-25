@@ -78,6 +78,7 @@ public final class Utility {
   private static Client sslClient;
   private static SSLContext sslContext;
   private static String SR_QUERY_URI;
+  private static boolean secure = false;
 
   private static final ObjectMapper mapper = JacksonJsonProviderAtRest.getMapper();
   private static final Logger log = Logger.getLogger(Utility.class.getName());
@@ -534,5 +535,13 @@ public final class Utility {
     Validator validator = factory.getValidator();
     Set<ConstraintViolation<T>> violations = validator.validate(bean);
     return violations.isEmpty();
+  }
+
+  public static boolean isSecure() {
+    return secure;
+  }
+
+  public static void setSecure(boolean secure) {
+    Utility.secure = secure;
   }
 }

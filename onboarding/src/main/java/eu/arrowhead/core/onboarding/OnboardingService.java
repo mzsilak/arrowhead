@@ -67,10 +67,14 @@ public class OnboardingService {
 
   public OnboardingService() {
     props = Utility.getProp();
-//        caBaseUri = Utility.getUri(getCaIp(), CoreSystem.CERTIFICATE_AUTHORITY.getInsecurePort(), "ca", false, false);
-    caBaseUri = Utility.getUri(getCaIp(), CoreSystem.CERTIFICATE_AUTHORITY.getSecurePort(), "ca", true, false);
-    srBaseUri = Utility.getUri(getSrIp(), CoreSystem.SERVICE_REGISTRY_SQL.getSecurePort(),
-                               CoreSystemService.SERVICE_LOOKUP_SERVICE.getServiceURI(), true, false);
+
+    caBaseUri = Utility.getUri(getCaIp(), Utility.isSecure() ? CoreSystem.CERTIFICATE_AUTHORITY.getSecurePort()
+                                                             : CoreSystem.CERTIFICATE_AUTHORITY.getInsecurePort(), "ca",
+                               Utility.isSecure(), false);
+
+    srBaseUri = Utility.getUri(getSrIp(), Utility.isSecure() ? CoreSystem.SERVICE_REGISTRY_SQL.getSecurePort()
+                                                             : CoreSystem.SERVICE_REGISTRY_SQL.getInsecurePort(),
+                               CoreSystemService.SERVICE_LOOKUP_SERVICE.getServiceURI(), Utility.isSecure(), false);
   }
 
   private String getCaIp() {
@@ -142,15 +146,16 @@ public class OnboardingService {
     final Map<String, String> metadata = new HashMap<>();
     metadata.put("security", "certificate");
 
-    final Set<String> interfaces = Collections.singleton("HTTP-SECURE-JSON");
+    final Set<String> interfaces =
+      Utility.isSecure() ? Collections.singleton("HTTP-SECURE-JSON") : Collections.singleton("HTTP-INSECURE-JSON");
 
     log.info("Getting publish service endpoints of orchestration service...");
     final ArrowheadService orchestration = compileService(CoreSystemService.ORCH_SERVICE, interfaces, metadata);
     final ServiceRegistryEntry orchSRE = sendServiceLookupRequest(orchestration);
 
     final String orchServiceFullURI = Utility
-      .getUri(orchSRE.getProvider().getAddress(), orchSRE.getProvider().getPort(), orchSRE.getServiceURI(), true,
-              false);
+      .getUri(orchSRE.getProvider().getAddress(), orchSRE.getProvider().getPort(), orchSRE.getServiceURI(),
+              Utility.isSecure(), false);
 
     log.info(String.format("Orch service full URI: %s", orchServiceFullURI));
 
@@ -188,21 +193,24 @@ public class OnboardingService {
 
     final List<ServiceEndpoint> endpoints = new ArrayList<>();
 
-    if(devregServiceURI != null)
-    endpoints.add(new ServiceEndpoint(CoreSystemService.DEVICE_REGISTRY_SERVICE, new URI(devregServiceURI)));
+    if (devregServiceURI != null) {
+      endpoints.add(new ServiceEndpoint(CoreSystemService.DEVICE_REGISTRY_SERVICE, new URI(devregServiceURI)));
+    }
 
-    if(sysregServiceURI != null)
-    endpoints.add(new ServiceEndpoint(CoreSystemService.SYSTEM_REGISTRY_SERVICE, new URI(sysregServiceURI)));
+    if (sysregServiceURI != null) {
+      endpoints.add(new ServiceEndpoint(CoreSystemService.SYSTEM_REGISTRY_SERVICE, new URI(sysregServiceURI)));
+    }
 
-    if(serregServiceURI != null)
-    endpoints.add(new ServiceEndpoint(CoreSystemService.SERVICE_REGISTRY_SERVICE, new URI(serregServiceURI)));
+    if (serregServiceURI != null) {
+      endpoints.add(new ServiceEndpoint(CoreSystemService.SERVICE_REGISTRY_SERVICE, new URI(serregServiceURI)));
+    }
 
     return endpoints.toArray(new ServiceEndpoint[0]);
   }
 
   private ArrowheadService compileService(final CoreSystemService service, final Set<String> interfaces,
                                           final Map<String, String> metadata) {
-    final String serviceDefinition = Utility.createSD(service.getServiceDef(), true);
+    final String serviceDefinition = Utility.createSD(service.getServiceDef(), Utility.isSecure());
     return new ArrowheadService(serviceDefinition, interfaces, metadata);
 
   }
@@ -236,9 +244,11 @@ public class OnboardingService {
       }
     }
 
+    int port = Utility.isSecure() ? props.getIntProperty("secure_port", CoreSystem.ONBOARDING.getSecurePort())
+                                  : props.getIntProperty("insecure_port", CoreSystem.ONBOARDING.getInsecurePort());
+
     //TODO: systemName as constant (?)
-    ArrowheadSystem consumer = new ArrowheadSystem(CoreSystem.ONBOARDING.name(), hostAddress, props
-      .getIntProperty("secure_port", CoreSystem.ONBOARDING.getSecurePort()), "null");
+    ArrowheadSystem consumer = new ArrowheadSystem(CoreSystem.ONBOARDING.name(), hostAddress, port, "null");
     //You can put any additional metadata you look for in a Service here (key-value pairs)
 //        Map<String, String> metadata = new HashMap<>();
 //        metadata.put("unit", "celsius");
@@ -329,7 +339,8 @@ public class OnboardingService {
 
             String serviceURI = Utility.getUri(orchResponse.getResponse().get(0).getProvider().getAddress(),
                                                orchResponse.getResponse().get(0).getProvider().getPort(),
-                                               orchResponse.getResponse().get(0).getServiceURI(), true, false);
+                                               orchResponse.getResponse().get(0).getServiceURI(), Utility.isSecure(),
+                                               false);
 
             log.info(String.format("Retrieved service URI from orchestrator: %s", serviceURI));
 
