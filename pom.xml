@@ -24,6 +24,8 @@
 
   <modules>
     <module>authorization</module>
+    <module>certificate_authority</module>
+    <module>deviceregistry</module>
     <module>core-common</module>
     <module>dnssd</module>
     <module>eventhandler</module>
@@ -33,6 +35,8 @@
     <module>qos</module>
     <module>serviceregistry</module>
     <module>serviceregistry_sql</module>
+    <module>systemregistry</module>
+    <module>onboarding</module>
   </modules>
 
   <properties>
@@ -45,7 +49,7 @@
     <hikari.cp.version>3.2.0</hikari.cp.version>
     <jackson.version>2.9.7</jackson.version>
     <javax.servlet.version>4.0.1</javax.servlet.version>
-    <jersey.version>2.27</jersey.version>
+    <jersey.version>2.29</jersey.version>
     <log4j.version>1.2.17</log4j.version>
     <mariadb.jdbc.driver>2.3.0</mariadb.jdbc.driver>
     <mysql.jdbc.driver>8.0.13</mysql.jdbc.driver>

@@ -29,7 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The package-private methods of this class represent the 4 different types of the orchestration process, while the 2 private methods are compiling
@@ -40,7 +41,7 @@ import org.apache.log4j.Logger;
 @SuppressWarnings("ConstantConditions")
 final class OrchestratorService {
 
-  private static final Logger log = Logger.getLogger(OrchestratorService.class.getName());
+  private static final Logger log = LogManager.getLogger(OrchestratorService.class.getName());
 
   private OrchestratorService() throws AssertionError {
     throw new AssertionError("OrchestratorService is a non-instantiable class");
@@ -66,6 +67,8 @@ final class OrchestratorService {
       for (ServiceRegistryEntry entry : srList) {
         providerSystems.add(entry.getProvider());
       }
+
+      log.debug("Checking authorisation if " + srf.getRequesterSystem() + " is allowed to use \"" + srf.getRequestedService() + "\" from " + providerSystems);
       providerSystems = OrchestratorDriver.queryAuthorization(srf.getRequesterSystem(), srf.getRequestedService(), providerSystems);
 
       /*

@@ -41,7 +41,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This is the REST resource for the Gatekeeper Core System.
@@ -51,7 +52,7 @@ import org.apache.log4j.Logger;
 @Produces(MediaType.APPLICATION_JSON)
 public class GatekeeperOutboundResource {
 
-  private static final Logger log = Logger.getLogger(GatekeeperOutboundResource.class.getName());
+  private static final Logger log = LogManager.getLogger(GatekeeperOutboundResource.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
 
   @GET

@@ -23,11 +23,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 final class EventHandlerService {
 
-  private static final Logger log = Logger.getLogger(EventHandlerResource.class.getName());
+  private static final Logger log = LogManager.getLogger(EventHandlerResource.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
   private static final HashMap<String, Object> restrictionMap = new HashMap<>();
 

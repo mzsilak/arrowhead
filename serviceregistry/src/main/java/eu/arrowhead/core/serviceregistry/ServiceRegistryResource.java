@@ -27,14 +27,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("serviceregistry")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class ServiceRegistryResource {
 
-  private static final Logger log = Logger.getLogger(ServiceRegistryResource.class.getName());
+  private static final Logger log = LogManager.getLogger(ServiceRegistryResource.class.getName());
 
   @GET
   @Produces(MediaType.TEXT_PLAIN)
@@ -53,6 +54,7 @@ public class ServiceRegistryResource {
         return Response.status(Response.Status.OK).build();
       } else {
         return Response.status(Response.Status.RESET_CONTENT).build();
+
       }
     } catch (Exception e) {
       log.error("SR Registration failed:" + e.getMessage());

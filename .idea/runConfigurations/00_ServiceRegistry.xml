@@ -3,6 +3,7 @@
     <option name="MAIN_CLASS_NAME" value="eu.arrowhead.core.serviceregistry_sql.ServiceRegistryMain" />
     <module name="arrowhead-serviceregistry-sql" />
     <option name="PROGRAM_PARAMETERS" value="-d" />
+    <option name="VM_PARAMETERS" value="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j.configurationFile=config/log4j2.properties" />
     <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
     <extension name="coverage">
       <pattern>

@@ -40,7 +40,8 @@ import java.util.Set;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Contains miscellaneous helper functions for the Orchestration process. The main functions of the Orchestration process used by the REST resource
@@ -50,7 +51,7 @@ import org.apache.log4j.Logger;
  */
 final class OrchestratorDriver {
 
-  private static final Logger log = Logger.getLogger(OrchestratorService.class.getName());
+  private static final Logger log = LogManager.getLogger(OrchestratorService.class.getName());
 
   private OrchestratorDriver() throws AssertionError {
     throw new AssertionError("OrchestratorDriver is a non-instantiable class");
@@ -94,7 +95,7 @@ final class OrchestratorDriver {
       throw new DataNotFoundException("ServiceRegistry query came back empty for " + service.toString());
     }
 
-    log.info("queryServiceRegistry was successful, number of potential providers for" + service.toString() + " is " + serviceQueryResult
+    log.info("queryServiceRegistry was successful, number of potential providers for " + service.toString() + " is " + serviceQueryResult
         .getServiceQueryData().size());
     return serviceQueryResult.getServiceQueryData();
   }
@@ -130,7 +131,8 @@ final class OrchestratorDriver {
     // Throwing exception if none of the providers are authorized for this consumer/service pair.
     if (authorizedSystems.isEmpty()) {
       log.error("queryAuthorization DataNotFoundException");
-      throw new DataNotFoundException("The consumer system is not authorized to receive servicing from any of the provider systems.",
+      throw new DataNotFoundException("The consumer system ("+consumer.getSystemName()+") is not authorized to receive servicing "
+                                        + "from any of the provider systems",
                                       Status.NOT_FOUND.getStatusCode());
     }
 

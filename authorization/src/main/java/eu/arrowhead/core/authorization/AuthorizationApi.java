@@ -36,7 +36,8 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("authorization/mgmt")
 @Produces(MediaType.APPLICATION_JSON)
@@ -44,7 +45,7 @@ import org.apache.log4j.Logger;
 public class AuthorizationApi {
 
   private final HashMap<String, Object> restrictionMap = new HashMap<>();
-  private static final Logger log = Logger.getLogger(AuthorizationApi.class.getName());
+  private static final Logger log = LogManager.getLogger(AuthorizationApi.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
 
   @GET
