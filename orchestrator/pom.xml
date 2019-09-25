@@ -32,7 +32,7 @@
 
     <dependency>
       <groupId>eu.arrowhead</groupId>
-      <artifactId>arrowhead-common</artifactId>
+      <artifactId>arrowhead-core-common</artifactId>
     </dependency>
 
   </dependencies>
@@ -164,12 +164,6 @@
                     <prefix>/etc/systemd/system</prefix>
                     <filemode>664</filemode>
                   </mapper>
-                </data>
-
-                <data>
-                  <type>file</type>
-                  <src>${project.basedir}/src/deb/create_orchestrator_db_empty.sql</src>
-                  <dst>/usr/share/arrowhead/db/create_orchestrator_db_empty.sql</dst>
                 </data>
 
               </dataSet>

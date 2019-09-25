@@ -34,14 +34,11 @@ First, get the latest repository package from <https://dev.mysql.com/downloads/r
 
 ```bash
 wget https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
-sudo apt dpkg -i mysql-apt-config_0.8.10-1_all.deb
+sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb
 sudo apt update
 ```
 
-As of writing, please leave an empty root password for the database, when installing it. The MySQL scripts in Arrowhead
-does not (yet) support password protected databases. After Arrowhead is installed and you finished calling any of the
-generation scripts below, it should be safe to set a root password for the database. Arrowhead itself uses its own
-`arrowhead` user, only the scripts requires a non-password `root` user. To install the MySQL server, run:
+To install the MySQL server, run:
 
 ```bash
 sudo apt install mysql-server
@@ -109,6 +106,8 @@ cd debian_packages/
 
 #### 4b. Build Arrowhead Debian Packages
 
+**NOTE:** To compile Arrowhead yourself, you should have both the JDK and Maven installed. Raspbian users should probably do this on their PC and then copy the files to their Raspberry Pi.
+
 To build the Debian packages yourself, start by cloning the repository:
 
 `git clone https://github.com/arrowhead-f/core-java.git -b develop`
@@ -117,15 +116,13 @@ Build them with:
 
 `mvn package`
 
-Copy all the packages to one location:
+Copy all the packages to your Arrowhead server/Raspberry Pi (you may have to start SSH server on it first with `sudo systemctl start ssh`:
 
 ```bash
 scp target/arrowhead-*.deb X.X.X.X:~/
 ```
 
 ### 5. Install Arrowhead Core Debian Packages
-
-**NOTE:** Currently, we do not support password protected MySQL root accounts. The installer (and scripts mentioned below), expects `sudo mysql -u root` to execute without a password dialog. When the installer finished, and you no longer need to call any of the scripts, it should be safe to set a root password again. This is a known issue and will be fixed in a future release, see https://github.com/arrowhead-f/core-java/issues/20.
 
 Go to the folder where you copied the packages and then:
 

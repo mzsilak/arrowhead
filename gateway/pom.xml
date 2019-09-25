@@ -33,7 +33,7 @@
 
     <dependency>
       <groupId>eu.arrowhead</groupId>
-      <artifactId>arrowhead-common</artifactId>
+      <artifactId>arrowhead-core-common</artifactId>
     </dependency>
 
     <dependency>

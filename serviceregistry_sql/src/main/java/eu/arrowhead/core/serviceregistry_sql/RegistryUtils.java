@@ -7,10 +7,13 @@
 
 package eu.arrowhead.core.serviceregistry_sql;
 
+import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +41,18 @@ class RegistryUtils {
   }
 
   static void filterOnPing(List<ServiceRegistryEntry> fetchedList) {
-    fetchedList.removeIf(current -> !pingHost(current.getProvider().getAddress(), current.getProvider().getPort(), ServiceRegistryMain.PING_TIMEOUT));
+    fetchedList.removeIf(current -> !pingHost(current.getProvider().getAddress(), current.getProvider().getPort(),
+                                              ServiceRegistryMain.PING_TIMEOUT));
+  }
+
+  static void filterOnInterfaces(List<ServiceRegistryEntry> fetchedList, ArrowheadService givenService) {
+    List<ServiceRegistryEntry> toBeRemoved = new ArrayList<>();
+    for (ServiceRegistryEntry entry : fetchedList) {
+      if (Collections.disjoint(entry.getProvidedService().getInterfaces(), givenService.getInterfaces())) {
+        toBeRemoved.add(entry);
+      }
+    }
+    fetchedList.removeAll(toBeRemoved);
   }
 
 }

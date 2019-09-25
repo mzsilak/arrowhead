@@ -14,6 +14,7 @@ import eu.arrowhead.common.database.ArrowheadSystem;
 import eu.arrowhead.common.database.OrchestrationStore;
 import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
+import eu.arrowhead.common.messages.OrchestrationStorePriorities;
 import eu.arrowhead.common.messages.OrchestrationStoreQuery;
 import eu.arrowhead.core.orchestrator.StoreService;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -33,7 +35,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
 
 @Path("orchestrator/mgmt/store")
@@ -137,7 +138,8 @@ public class StoreApi {
   }
 
   /**
-   * Adds a list of Orchestration Store entries to the database. Elements which would throw BadPayloadException are being skipped. The returned list
+   * Adds a list of Orchestration Store entries to the database. Elements which would throw BadPayloadException are
+   * being skipped. The returned list
    * only contains the elements which were saved in the process.
    *
    * @return List<OrchestrationStore>
@@ -191,11 +193,14 @@ public class StoreApi {
       restrictionMap.put("defaultEntry", entry.isDefaultEntry());
       OrchestrationStore storeEntry = dm.get(OrchestrationStore.class, restrictionMap);
       if (storeEntry == null) {
-        // Merge the service metadata map to the store attributes map, duplicate keys are handled with concatenated values
-        entry.getService().getServiceMetadata().forEach((k, v) -> entry.getAttributes().merge(k, v, (v1, v2) -> String.join(", ", v1, v2)));
+        // Merge the service metadata map to the store attributes map, duplicate keys are handled with concatenated
+        // values
+        entry.getService().getServiceMetadata()
+             .forEach((k, v) -> entry.getAttributes().merge(k, v, (v1, v2) -> String.join(", ", v1, v2)));
         // Create the new Store Entry with the transactional objects
-        storeEntry = new OrchestrationStore(service, consumer, providerSystem, providerCloud, entry.getPriority(), entry.isDefaultEntry(),
-                                            entry.getName(), LocalDateTime.now(), entry.getInstruction(), entry.getAttributes(), null);
+        storeEntry = new OrchestrationStore(service, consumer, providerSystem, providerCloud, entry.getPriority(),
+                                            entry.isDefaultEntry(), entry.getName(), LocalDateTime.now(),
+                                            entry.getInstruction(), entry.getAttributes(), null);
         storeEntry = dm.save(storeEntry);
         store.add(storeEntry);
       }
@@ -227,70 +232,49 @@ public class StoreApi {
     } else {
       entry.setDefaultEntry(!entry.isDefaultEntry());
       dm.merge(entry);
-      log.info("toggleIsDefault succesfully returns.");
+      log.info("toggleIsDefault successfully returns.");
       return Response.ok(entry).build();
     }
   }
 
   /**
-   * Updates the non-entity fields of an Orchestration Store entry specified by the id field of the payload. Entity fields have their own update
-   * method in CommonApi.class. (Or delete and then post the modified entry again.)
-   *
    * @return OrchestrationStore
    *
    * @throws BadPayloadException, DataNotFoundException
    */
   @PUT
   @Path("update/{id}")
-  public Response updateEntry(@PathParam("id") long id, @Valid OrchestrationStore payload) {
-    payload.validateCrossParameterConstraints();
-    restrictionMap.put("id", id);
-    OrchestrationStore storeEntry = dm.get(OrchestrationStore.class, restrictionMap);
-    if (storeEntry == null) {
-      log.info("updateEntry throws DataNotFoundException.");
-      throw new DataNotFoundException("Store entry specified by the id(" + payload.getId() + ") was not found in the database.");
-    } else if (storeEntry.getProviderCloud() != null && payload.isDefaultEntry()) {
-      log.info("updateEntry throws BadPayloadException.");
-      throw new BadPayloadException("Only intra-cloud store entries can be set as default entries.");
-    } else {
-      storeEntry.setPriority(payload.getPriority());
-      storeEntry.setDefaultEntry(payload.isDefaultEntry());
-      storeEntry.setName(payload.getName());
-      storeEntry.setLastUpdated(LocalDateTime.now());
-      if (payload.getService() != null) {
-        payload.getService().getServiceMetadata().forEach((k, v) -> payload.getAttributes().merge(k, v, (v1, v2) -> String.join(", ", v1, v2)));
-      }
-      storeEntry.setInstruction(payload.getInstruction());
-      storeEntry.setAttributes(payload.getAttributes());
-      storeEntry = dm.merge(storeEntry);
-
-      log.info("updateEntry successfully returns.");
-      return Response.status(Status.ACCEPTED).entity(storeEntry).build();
-    }
+  public Response updateStoreEntry(@PathParam("id") long id, @Valid OrchestrationStore updatedEntry) {
+    updatedEntry.validateCrossParameterConstraints();
+    OrchestrationStore entry = dm.get(OrchestrationStore.class, id).orElseThrow(
+        () -> new DataNotFoundException("OrchestrationStore entry not found with id: " + id));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
+    log.info("updateStoreEntry successfully returns.");
+    return Response.ok().entity(entry).build();
   }
 
   /**
-   * Deletes the Orchestration Store entry with the id specified by the path parameter. Returns 200 if the delete is successful, 204 (no content) if
+   * Deletes the Orchestration Store entry with the id specified by the path parameter. Returns 200 if the delete is
+   * successful, 204 (no content) if
    * the entry was not in the database to begin with.
    */
   @DELETE
   @Path("{id}")
-  public Response deleteEntry(@PathParam("id") Integer id) {
-
-    restrictionMap.put("id", id);
-    OrchestrationStore entry = dm.get(OrchestrationStore.class, restrictionMap);
-    if (entry == null) {
-      log.info("deleteEntry had no effect.");
-      return Response.noContent().build();
-    } else {
+  public Response deleteEntry(@PathParam("id") long id) {
+    return dm.get(OrchestrationStore.class, id).map(entry -> {
       dm.delete(entry);
-      log.info("deleteEntry successfully returns.");
+      log.info("deleteStoreEntry successfully returns.");
       return Response.ok().build();
-    }
+    }).<DataNotFoundException>orElseThrow(() -> {
+      log.info("deleteStoreEntry had no effect.");
+      throw new DataNotFoundException("OrchestrationStore entry not found with id: " + id);
+    });
   }
 
   /**
-   * Deletes the Orchestration Store entries from the database specified by the consumer. Returns 200 if the delete is successful, 204 (no content) if
+   * Deletes the Orchestration Store entries from the database specified by the consumer. Returns 200 if the delete
+   * is successful, 204 (no content) if
    * no matching entries were in the database to begin with.
    */
   @DELETE
@@ -316,6 +300,21 @@ public class StoreApi {
       log.info("deleteEntries successfully returns.");
       return Response.ok().build();
     }
+  }
+
+  @PUT
+  @Path("priorities")
+  public Response updatePriorities(@Valid OrchestrationStorePriorities prioritiesMap) {
+    Set<Long> IDs = prioritiesMap.getPriorities().keySet();
+    List<OrchestrationStore> storeList = dm.get(OrchestrationStore.class, IDs);
+    dm.delete(storeList.toArray());
+
+    for (OrchestrationStore entry : storeList) {
+      int newPriority = prioritiesMap.getPriorities().get(entry.getId());
+      entry.setPriority(newPriority);
+    }
+    dm.save(storeList.toArray());
+    return Response.ok().entity(storeList).build();
   }
 
 }

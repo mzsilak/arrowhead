@@ -30,6 +30,7 @@
     <property name="hikari.poolName">ServiceRegistry</property>
     <property name="hikari.registerMbeans">true</property>
 
+    <mapping class="eu.arrowhead.common.database.Logs"/>
     <mapping class="eu.arrowhead.common.database.ArrowheadSystem"/>
     <mapping class="eu.arrowhead.common.database.ArrowheadService"/>
     <mapping class="eu.arrowhead.common.database.ServiceRegistryEntry"/>

@@ -56,7 +56,8 @@ public class EventHandlerResource {
         throw new BadPayloadException(
             "This event is too old to publish. Maximum allowed delay before publishing the event: " + EventHandlerMain.EVENT_PUBLISHING_TOLERANCE);
       }
-      if (eventPublished.getEvent().getTimestamp().isAfter(ZonedDateTime.now().plusMinutes(EventHandlerMain.EVENT_PUBLISHING_TOLERANCE))) {
+      if (eventPublished.getEvent().getTimestamp()
+                        .isAfter(ZonedDateTime.now().plusMinutes(EventHandlerMain.EVENT_PUBLISHING_TOLERANCE))) {
         throw new BadPayloadException(
             "This event is too far in the future. Maximum allowed timestamp tolerance for events: " + EventHandlerMain.EVENT_PUBLISHING_TOLERANCE);
       }

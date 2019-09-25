@@ -29,7 +29,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
 
-@Path("gatekeeper/mgmt")
+@Path(GatekeeperMain.GATEKEEPER_SERVICE_URI + "/mgmt")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class GatekeeperApi {

@@ -44,7 +44,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import org.apache.log4j.Logger;
 
-@Path("gatekeeper")
+@Path(GatekeeperMain.GATEKEEPER_SERVICE_URI)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class GatekeeperInboundResource {

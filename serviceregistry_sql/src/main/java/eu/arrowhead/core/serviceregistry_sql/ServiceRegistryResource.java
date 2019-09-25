@@ -83,7 +83,7 @@ public class ServiceRegistryResource {
               .getServiceDefinition() + ")");
     }
 
-    savedEntry.fromDatabase();
+    savedEntry.fromDatabase(true);
     log.info("New " + entry.toString() + " is saved.");
     return Response.status(Status.CREATED).entity(savedEntry).build();
   }
@@ -102,9 +102,11 @@ public class ServiceRegistryResource {
     restrictionMap.put("providedService", service);
     List<ServiceRegistryEntry> providedServices = dm.getAll(ServiceRegistryEntry.class, restrictionMap);
     for (ServiceRegistryEntry entry : providedServices) {
-      entry.fromDatabase();
+      entry.fromDatabase(true);
     }
 
+    log.debug("Potential service providers before filtering:" + providedServices.size());
+    RegistryUtils.filterOnInterfaces(providedServices, queryForm.getService());
     if (queryForm.getVersion() != null) {
       RegistryUtils.filterOnVersion(providedServices, queryForm.getVersion());
     } else {
@@ -126,6 +128,7 @@ public class ServiceRegistryResource {
     if (queryForm.isPingProviders()) {
       RegistryUtils.filterOnPing(providedServices);
     }
+    log.debug("Potential service providers after filtering:" + providedServices.size());
 
     log.info("Service " + queryForm.getService().toString() + " queried successfully.");
     ServiceQueryResult result = new ServiceQueryResult(providedServices);
@@ -150,7 +153,7 @@ public class ServiceRegistryResource {
     ServiceRegistryEntry retrievedEntry = dm.get(ServiceRegistryEntry.class, restrictionMap);
     if (retrievedEntry != null) {
       dm.delete(retrievedEntry);
-      retrievedEntry.fromDatabase();
+      retrievedEntry.fromDatabase(true);
       log.info(retrievedEntry.toString() + " deleted.");
       return Response.status(Status.OK).entity(retrievedEntry).build();
     } else {

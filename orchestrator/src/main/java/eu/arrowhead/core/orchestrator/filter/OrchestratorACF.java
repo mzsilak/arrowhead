@@ -41,12 +41,12 @@ public class OrchestratorACF extends AccessControlFilter {
       ServiceRequestForm srf = Utility.fromJson(requestJson, ServiceRequestForm.class);
 
       // If this is an external service request, only the local Gatekeeper can send this method
-      if (srf.getOrchestrationFlags().get("externalServiceRequest")) {
+      if (srf.getOrchestrationFlags().getOrDefault("externalServiceRequest", false)) {
         return clientFields[0].equalsIgnoreCase("gatekeeper") && serverFields[1].equalsIgnoreCase(clientFields[1]);
       } else {
         // Otherwise all request from the local cloud are allowed
-        String consumerName = srf.getRequesterSystem().getSystemName().replaceAll("_", "");
-        if (!consumerName.equalsIgnoreCase(clientFields[0])) {
+        String consumerName = srf.getRequesterSystem().getSystemName();
+        if (!consumerName.equalsIgnoreCase(clientFields[0]) && !consumerName.replaceAll("_", "").equalsIgnoreCase(clientFields[0])) {
           // BUT the requester system has to be the same as the first part of the common name
           log.error("Requester system name and cert common name do not match!");
           throw new AuthException(

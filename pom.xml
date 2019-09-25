@@ -24,7 +24,7 @@
 
   <modules>
     <module>authorization</module>
-    <module>common</module>
+    <module>core-common</module>
     <module>dnssd</module>
     <module>eventhandler</module>
     <module>gatekeeper</module>
@@ -36,8 +36,8 @@
   </modules>
 
   <properties>
-    <base.version>4.1.1</base.version>
-    <revision>${base.version}-SNAPSHOT</revision>
+    <base.version>4.1.2</base.version>
+    <revision>${base.version}</revision>
     <mvn.compiler.version>3.8.0</mvn.compiler.version>
     <mvn.compile.target>1.8</mvn.compile.target>
     <dnsjava.version>2.1.8</dnsjava.version>
@@ -84,7 +84,7 @@
 
       <dependency>
         <groupId>eu.arrowhead</groupId>
-        <artifactId>arrowhead-common</artifactId>
+        <artifactId>arrowhead-core-common</artifactId>
         <version>${project.version}</version>
       </dependency>
 

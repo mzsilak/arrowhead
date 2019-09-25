@@ -84,14 +84,10 @@ final class OrchestratorDriver {
       if (!Utility.isBeanValid(entry)) {
         temp.add(entry);
       }
-      //NOTE this should be done on the SR side I think
-      if (!StoreService.hasMatchingInterfaces(service, entry.getProvidedService())) {
-        temp.add(entry);
-      }
     }
     serviceQueryResult.getServiceQueryData().removeAll(temp);
     if (temp.size() > 0) {
-      log.info(temp.size() + " not valid OR incompatible (0 common service interface) SR entries removed from the response");
+      log.info(temp.size() + " not valid SR entries removed from the response");
     }
     if (!serviceQueryResult.isValid()) {
       log.error("queryServiceRegistry DataNotFoundException");
@@ -466,9 +462,9 @@ final class OrchestratorDriver {
 
     // Passing through the relevant orchestration flags to the ICNRequestForm
     Map<String, Boolean> negotiationFlags = new HashMap<>();
-    negotiationFlags.put("metadataSearch", srf.getOrchestrationFlags().get("metadataSearch"));
-    negotiationFlags.put("pingProviders", srf.getOrchestrationFlags().get("pingProviders"));
-    negotiationFlags.put("onlyPreferred", srf.getOrchestrationFlags().get("onlyPreferred"));
+    negotiationFlags.put("metadataSearch", srf.getOrchestrationFlags().getOrDefault("metadataSearch", false));
+    negotiationFlags.put("pingProviders", srf.getOrchestrationFlags().getOrDefault("pingProviders", false));
+    negotiationFlags.put("onlyPreferred", srf.getOrchestrationFlags().getOrDefault("onlyPreferred", false));
     negotiationFlags.put("externalServiceRequest", true);
 
     // Creating the ICNRequestForm object, which is the payload of the request sent to the Gatekeeper

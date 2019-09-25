@@ -1,7 +1,9 @@
 [![Build Status](https://api.travis-ci.com/arrowhead-f/core-java.svg?branch=develop)](https://travis-ci.com/arrowhead-f/core-java)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?colorB=green)](https://github.com/arrowhead-f/core-java/blob/master/LICENSE)
 
-# Arrowhead Framework 4.1
+# This repository is archived, for further development and usage please refer to the [Core-Java-Spring](https://github.com/arrowhead-f/core-java-spring) repository!
+
+# Arrowhead Framework 4.1.2
 
 [Arrowhead](http://www.arrowhead.eu/) (and its continuation, [Productive4.0](https://productive40.eu/)) is an ambitious holistic innovation project,
  meant to open the doors to the potentials of Digital Industry and to maintain a leadership position of the industries in Europe. All partners involved will work on creating the capability to efficiently design and integrate hardware and software of Internet of Things (IoT) devices. Linking the real with the digital world takes more than just adding software to the hardware.
@@ -63,12 +65,14 @@ messages from all the core systems in one place.
 * Each core system will log to a file in its active working directory called `log4j_log.txt`. These text files are separate for each core system, 
 meaning one text file only contains the log messages of one core system.
 
-The databases schema(s) have to be created before starting the core systems. The `logs` table also has to be manually created, because that is 
+The databases schema have to be created before starting the core systems. The SQL script at `scripts/create_empty_arrowhead_db.sql` creates a database schema callel `arrowhead`, and also generates all the database tables used by the Core Systems.
+
+The `logs` table also has to be manually created, because that is 
 only used by the logging library, and the ORM library does not know about it. The ORM library can create all the other arrowhead tables, if they do 
 not exist yet. An SQL script can be found at `common/config/create_arrowhead_logs.sql` to create the `logs` table.
 
 The project can also be run from an IDE for testing purposes. Just import the multi-module project as a maven project, and the IDE should find all 
-the `pom.xml` files necessary to download the dependencies and start the core systems.
+the `pom.xml` files necessary to download the dependencies and start the core systems. IntelliJ IDEA specific run configurations (for insecure and secure mode separately) are also provided, including compound configurations, which can start all the core systems together.
 
 ### Ubuntu, Raspbian and other Debian based Linux distriutions
 An alternative method for installing a local Arrowhead Cloud on a
@@ -80,6 +84,33 @@ Orchestrator and Service Registry.
 A full setup guide can be read here: [DEBIAN-INSTALL.md](https://github.com/arrowhead-f/core-java/blob/develop/documentation/Debian%20Packages/DEBIAN-INSTALL.md)
 
 A guide on how to add new core systems to the package generation: [DEBIAN-DEV.md](https://github.com/arrowhead-f/core-java/blob/develop/documentation/Debian%20Packages/DEBIAN-DEV.md) 
+
+### Windows 10 Install Guide
+
+Install Java JDK 8+ [Download from here](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html)
+Install Maven 3.5+ [Download from here](http://maven.apache.org/download.cgi) | [Install guide](https://www.baeldung.com/install-maven-on-windows-linux-mac)
+Install MySQL Server 5.7+ (other SQL databases can work with Hibernate ORM, but the `common module pom.xml` has to include the appropriate connector 
+dependency to use them)
+
+Verify that you have Java (```java -version```), Maven (```mvn -version```), MySQL installed properly!
+
+
+Install git (see git-scm.com/download/win)
+
+(Use recommended settings, except for terminal emulator use windows default)
+
+Create System variables for ```MAVEN_HOME``` and ```M2_HOME``` pointing to the unzipped binaries e.g. C:\ProgramFiles\apache-maven-3.0.6) Search for “env” and use the edit environmental variables button.
+Set path to include Maven (Click Path and edit. Then add ```%MAVEN_HOME\bin%``` and ```%M2_HOME\bin%```.
+Add MySQL to the path.
+Now checkout this repository, don't forget to select the correct branch!
+
+Edit the config files (the database connection, NOTE also the logging has database connections that need to be entered. Check the WHOLE config files).
+
+Initialize the database by running the db scripts found in the /scripts folder
+
+Run mvn install in the core-java folder. Then execute the created jar file. Wait a few minutes and test that the system is up:
+http://localhost:8440/orchestrator/orchestration
+This should reply “Orchestrator got it!”
 
 ### REST interfaces
 

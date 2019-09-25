@@ -92,24 +92,24 @@ final class OrchestratorService {
           providerSystems.add(provider.getProviderSystem());
         }
       }
-      if (orchestrationFlags.get("onlyPreferred")) {
+      if (orchestrationFlags.getOrDefault("onlyPreferred", false)) {
         srList = OrchestratorDriver.removeNonPreferred(srList, providerSystems);
       }
 
       //placeholder step
-      if (orchestrationFlags.get("enableQoS")) {
+      if (orchestrationFlags.getOrDefault("enableQoS", false)) {
         srList = OrchestratorDriver.doQoSVerification(srList);
       }
 
       // If matchmaking is requested, we pick out 1 ServiceRegistryEntry entity from the list. Preferred Systems (2nd arg) have higher priority
-      if (orchestrationFlags.get("matchmaking")) {
+      if (orchestrationFlags.getOrDefault("matchmaking", false)) {
         ServiceRegistryEntry entry = OrchestratorDriver.intraCloudMatchmaking(srList, providerSystems);
         srList.clear();
         srList.add(entry);
       }
 
       //placeholder step
-      if (orchestrationFlags.get("enableQoS")) {
+      if (orchestrationFlags.getOrDefault("enableQoS", false)) {
         srList = OrchestratorDriver.doQosReservation(srList);
       }
 
@@ -121,7 +121,7 @@ final class OrchestratorService {
      * If the Intra-Cloud orchestration fails somewhere (SR, Auth, filtering, matchmaking) we catch the exception, because Inter-Cloud
      * orchestration might be allowed. If not, we throw the same exception again.
      */ catch (DataNotFoundException ex) {
-      if (!orchestrationFlags.get("enableInterCloud")) {
+      if (!orchestrationFlags.getOrDefault("enableInterCloud", false)) {
         log.error("dynamicOrchestration: Intra-Cloud orchestration failed with DataNotFoundException, Inter-Cloud is not requested.");
         throw ex;
       } else {
@@ -228,8 +228,8 @@ final class OrchestratorService {
     }
 
     Map<String, Boolean> registryFlags = new HashMap<>();
-    registryFlags.put("metadataSearch", orchestrationFlags.get("metadataSearch"));
-    registryFlags.put("pingProviders", orchestrationFlags.get("pingProviders"));
+    registryFlags.put("metadataSearch", orchestrationFlags.getOrDefault("metadataSearch", false));
+    registryFlags.put("pingProviders", orchestrationFlags.getOrDefault("pingProviders", false));
     // Telling the Gatekeeper to do a Global Service Discovery
     GSDResult result = OrchestratorDriver.doGlobalServiceDiscovery(srf.getRequestedService(), preferredClouds, registryFlags);
     log.debug("triggerInterCloud: GSD results arrived back to the Orchestrator");
@@ -245,7 +245,7 @@ final class OrchestratorService {
     }
 
     // If matchmaking is requested, we pick one provider from the ICN result
-    if (orchestrationFlags.get("matchmaking")) {
+    if (orchestrationFlags.getOrDefault("matchmaking", false)) {
       // Getting the list of valid preferred systems from the ServiceRequestForm, which belong to the target cloud
       List<ArrowheadSystem> preferredSystems = new ArrayList<>();
       for (PreferredProvider provider : srf.getPreferredProviders()) {
@@ -276,7 +276,7 @@ final class OrchestratorService {
     log.debug("externalServiceRequest: SR query done");
 
     // If needed, removing the non-preferred providers from the SR response. (If needed, matchmaking is done after this at the request sender Cloud.)
-    if (orchestrationFlags.get("onlyPreferred")) {
+    if (orchestrationFlags.getOrDefault("onlyPreferred", false)) {
       // This SRF contains only local preferred systems, since this request came from another cloud, but the de-boxing is necessary
       Set<ArrowheadSystem> localPreferredSystems = new HashSet<>();
       for (PreferredProvider provider : srf.getPreferredProviders()) {
@@ -307,7 +307,7 @@ final class OrchestratorService {
     for (ServiceRegistryEntry entry : srList) {
       OrchestrationForm of = new OrchestrationForm(entry.getProvidedService(), entry.getProvider(), entry.getServiceURI());
 
-      if (srf.getOrchestrationFlags().get("overrideStore")) {
+      if (srf.getOrchestrationFlags().getOrDefault("overrideStore", false)) {
         if (entry.getEndOfValidity() == null) {
           of.getWarnings().add(OrchestratorWarnings.TTL_UNKNOWN);
         } else if (entry.getEndOfValidity().isBefore(LocalDateTime.now())) {

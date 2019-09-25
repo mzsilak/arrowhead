@@ -46,7 +46,7 @@ import org.apache.log4j.Logger;
 /**
  * This is the REST resource for the Gatekeeper Core System.
  */
-@Path("gatekeeper")
+@Path(GatekeeperMain.GATEKEEPER_SERVICE_URI)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class GatekeeperOutboundResource {

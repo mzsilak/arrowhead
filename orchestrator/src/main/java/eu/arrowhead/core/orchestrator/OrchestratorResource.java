@@ -54,13 +54,13 @@ public class OrchestratorResource {
     srf.validateCrossParameterConstraints();
 
     OrchestrationResponse orchResponse;
-    if (srf.getOrchestrationFlags().get("externalServiceRequest")) {
+    if (srf.getOrchestrationFlags().getOrDefault("externalServiceRequest", false)) {
       log.info("Received an externalServiceRequest.");
       orchResponse = OrchestratorService.externalServiceRequest(srf);
-    } else if (srf.getOrchestrationFlags().get("triggerInterCloud")) {
+    } else if (srf.getOrchestrationFlags().getOrDefault("triggerInterCloud", false)) {
       log.info("Received a triggerInterCloud request.");
       orchResponse = OrchestratorService.triggerInterCloud(srf);
-    } else if (!srf.getOrchestrationFlags().get("overrideStore")) { //overrideStore == false
+    } else if (!srf.getOrchestrationFlags().getOrDefault("overrideStore", false)) { //overrideStore == false
       log.info("Received an orchestrationFromStore request.");
       orchResponse = OrchestratorService.orchestrationFromStore(srf);
     } else {

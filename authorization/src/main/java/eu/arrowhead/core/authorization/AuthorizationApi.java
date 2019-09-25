@@ -27,6 +27,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -54,6 +55,7 @@ public class AuthorizationApi {
 
   @GET
   @Path("publickey")
+  @Produces(MediaType.TEXT_PLAIN)
   public String getMyPublicKey() {
     return Base64.getEncoder().encodeToString(AuthorizationMain.publicKey.getEncoded());
   }
@@ -92,7 +94,8 @@ public class AuthorizationApi {
 
   @GET
   @Path("intracloud/systemId/{systemId}/services")
-  public Set<ArrowheadService> getSystemServices(@PathParam("systemId") long systemId, @QueryParam("provider_side") boolean providerSide) {
+  public Set<ArrowheadService> getSystemServices(@PathParam("systemId") long systemId,
+                                                 @QueryParam("provider_side") boolean providerSide) {
     ArrowheadSystem system = dm.get(ArrowheadSystem.class, systemId).<DataNotFoundException>orElseThrow(() -> {
       log.info("getSystemServices throws DataNotFoundException.");
       throw new DataNotFoundException("ArrowheadSystem not found with id:" + systemId);
@@ -106,7 +109,8 @@ public class AuthorizationApi {
     List<IntraCloudAuthorization> authRightsList = dm.getAll(IntraCloudAuthorization.class, restrictionMap);
     if (authRightsList.isEmpty()) {
       log.info("getSystemServices throws DataNotFoundException.");
-      throw new DataNotFoundException("IntraCloud authorization rights were not found in the database for this consumer system.");
+      throw new DataNotFoundException(
+          "IntraCloud authorization rights were not found in the database for this consumer system.");
     }
 
     Set<ArrowheadService> serviceList = new HashSet<>();
@@ -130,15 +134,16 @@ public class AuthorizationApi {
     List<IntraCloudAuthorization> authRights = dm.getAllOfEither(IntraCloudAuthorization.class, restrictionMap);
     if (authRights.isEmpty()) {
       log.info("getSystemAuthRights throws DataNotFoundException.");
-      throw new DataNotFoundException("This System is not in the authorization database. " + system.getSystemName());
+      throw new DataNotFoundException("This System is not in the authorization database. " + system.toString());
     }
-    log.info("getSystemAuthRights returns");
+    log.info("getSystemAuthRights returns " + authRights.size() + " entries");
     return authRights;
   }
 
   @GET
   @Path("intracloud/servicedef/{serviceDefinition}")
-  public List<IntraCloudAuthorization> getServiceIntraAuthRights(@PathParam("serviceDefinition") String serviceDefinition) {
+  public List<IntraCloudAuthorization> getServiceIntraAuthRights(
+      @PathParam("serviceDefinition") String serviceDefinition) {
 
     restrictionMap.put("serviceDefinition", serviceDefinition);
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
@@ -154,13 +159,13 @@ public class AuthorizationApi {
       log.info("getServiceIntraAuthRights throws DataNotFoundException.");
       throw new DataNotFoundException("This Service is not in the authorization database. " + service.toString());
     }
-    log.info("getServiceIntraAuthRights returns");
+    log.info("getServiceIntraAuthRights returns " + authRights.size() + " entries");
     return authRights;
   }
 
-
   /**
-   * Creates relations between local Systems, defining the consumable services between Systems. (Not bidirectional.) OneToMany relation between
+   * Creates relations between local Systems, defining the consumable services between Systems. (Not bidirectional.)
+   * OneToMany relation between
    * consumer and providers, OneToMany relation between consumer and services.
    *
    * @return JAX-RS Response with status code 201 and ArrowheadSystem entity (the consumer system)
@@ -211,9 +216,21 @@ public class AuthorizationApi {
     }
 
     log.info("addSystemToAuthorized: " + savedAuthRights.size() + " authorization rights created.");
-    GenericEntity<List<IntraCloudAuthorization>> entity = new GenericEntity<List<IntraCloudAuthorization>>(savedAuthRights) {
+    GenericEntity<List<IntraCloudAuthorization>> entity = new GenericEntity<List<IntraCloudAuthorization>>(
+        savedAuthRights) {
     };
     return Response.status(Status.CREATED).entity(entity).build();
+  }
+
+  @PUT
+  @Path("intracloud")
+  public Response updateIntraEntry(@Valid IntraCloudAuthorization updatedEntry) {
+    IntraCloudAuthorization entry = dm.get(IntraCloudAuthorization.class, updatedEntry.getId()).orElseThrow(
+        () -> new DataNotFoundException("IntraCloudAuthorization entry not found with id: " + updatedEntry.getId()));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
+    log.info("updateIntraEntry successfully returns.");
+    return Response.ok().entity(entry).build();
   }
 
   /**
@@ -233,13 +250,15 @@ public class AuthorizationApi {
   }
 
   /**
-   * Deletes all the authorization right relations where the given System is the consumer/provider (decided by query parameter).
+   * Deletes all the authorization right relations where the given System is the consumer/provider (decided by query
+   * parameter).
    *
    * @return JAX-RS Response with status code 200 (if delete is succesxfull) or 204 (if nothing happens).
    */
   @DELETE
   @Path("intracloud/systemId/{systemId}")
-  public Response deleteSystemRelations(@PathParam("systemId") long systemId, @QueryParam("provider_side") boolean providerSide) {
+  public Response deleteSystemRelations(@PathParam("systemId") long systemId,
+                                        @QueryParam("provider_side") boolean providerSide) {
     ArrowheadSystem system = dm.get(ArrowheadSystem.class, systemId).<DataNotFoundException>orElseThrow(() -> {
       log.info("deleteSystemRelations throws DNF.");
       throw new DataNotFoundException("ArrowheadSystem not found with id: " + systemId);
@@ -298,14 +317,16 @@ public class AuthorizationApi {
 
   @GET
   @Path("intercloud/operator/{operator}/cloudname/{cloudName}/services")
-  public Set<ArrowheadService> getCloudServices(@PathParam("operator") String operator, @PathParam("cloudName") String cloudName) {
+  public Set<ArrowheadService> getCloudServices(@PathParam("operator") String operator,
+                                                @PathParam("cloudName") String cloudName) {
 
     restrictionMap.put("operator", operator);
     restrictionMap.put("cloudName", cloudName);
     ArrowheadCloud cloud = dm.get(ArrowheadCloud.class, restrictionMap);
     if (cloud == null) {
       log.info("getCloudServices throws DataNotFoundException.");
-      throw new DataNotFoundException("Consumer Cloud (" + operator + ":" + cloudName + ") is not in the authorization database");
+      throw new DataNotFoundException(
+          "Consumer Cloud (" + operator + ":" + cloudName + ") is not in the authorization database");
     }
 
     restrictionMap.clear();
@@ -322,14 +343,16 @@ public class AuthorizationApi {
 
   @GET
   @Path("intercloud/operator/{operator}/cloudname/{cloudName}")
-  public List<InterCloudAuthorization> getCloudAuthRights(@PathParam("operator") String operator, @PathParam("cloudName") String cloudName) {
+  public List<InterCloudAuthorization> getCloudAuthRights(@PathParam("operator") String operator,
+                                                          @PathParam("cloudName") String cloudName) {
 
     restrictionMap.put("operator", operator);
     restrictionMap.put("cloudName", cloudName);
     ArrowheadCloud cloud = dm.get(ArrowheadCloud.class, restrictionMap);
     if (cloud == null) {
       log.info("getCloudServices throws DataNotFoundException.");
-      throw new DataNotFoundException("Consumer Cloud (" + operator + ":" + cloudName + ") is not in the authorization database");
+      throw new DataNotFoundException(
+          "Consumer Cloud (" + operator + ":" + cloudName + ") is not in the authorization database");
     }
 
     restrictionMap.clear();
@@ -345,13 +368,15 @@ public class AuthorizationApi {
 
   @GET
   @Path("intercloud/servicedef/{serviceDefinition}")
-  public List<InterCloudAuthorization> getServiceInterAuthRights(@PathParam("serviceDefinition") String serviceDefinition) {
+  public List<InterCloudAuthorization> getServiceInterAuthRights(
+      @PathParam("serviceDefinition") String serviceDefinition) {
 
     restrictionMap.put("serviceDefinition", serviceDefinition);
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
     if (service == null) {
       log.info("getServiceInterAuthRights throws DataNotFoundException.");
-      throw new DataNotFoundException("Consumer Cloud (" + serviceDefinition + ") is not in the authorization database");
+      throw new DataNotFoundException(
+          "Consumer Cloud (" + serviceDefinition + ") is not in the authorization database");
     }
 
     restrictionMap.clear();
@@ -403,13 +428,26 @@ public class AuthorizationApi {
     }
 
     log.info("addCloudToAuthorized: " + savedAuthRights.size() + " authorization rights created.");
-    GenericEntity<List<InterCloudAuthorization>> entity = new GenericEntity<List<InterCloudAuthorization>>(savedAuthRights) {
+    GenericEntity<List<InterCloudAuthorization>> entity = new GenericEntity<List<InterCloudAuthorization>>(
+        savedAuthRights) {
     };
     return Response.status(Status.CREATED).entity(entity).build();
   }
 
+  @PUT
+  @Path("intercloud")
+  public Response updateInterEntry(@Valid InterCloudAuthorization updatedEntry) {
+    InterCloudAuthorization entry = dm.get(InterCloudAuthorization.class, updatedEntry.getId()).orElseThrow(
+        () -> new DataNotFoundException("InterCloudAuthorization entry not found with id: " + updatedEntry.getId()));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
+    log.info("InterCloudAuthorization successfully returns.");
+    return Response.ok().entity(entry).build();
+  }
+
   /**
-   * Deletes the InterCloudAuthorization entry with the id specified by the path parameter. Returns 200 if the delete is successful, 204 (no content)
+   * Deletes the InterCloudAuthorization entry with the id specified by the path parameter. Returns 200 if the delete
+   * is successful, 204 (no content)
    * if the entry was not in the database to begin with.
    */
   @DELETE
@@ -432,7 +470,8 @@ public class AuthorizationApi {
    */
   @DELETE
   @Path("intercloud/operator/{operator}/cloudname/{cloudName}")
-  public Response deleteCloudRelations(@PathParam("operator") String operator, @PathParam("cloudName") String cloudName) {
+  public Response deleteCloudRelations(@PathParam("operator") String operator,
+                                       @PathParam("cloudName") String cloudName) {
     log.info("Entered the deleteCloudRelations method.");
 
     restrictionMap.put("operator", operator);
