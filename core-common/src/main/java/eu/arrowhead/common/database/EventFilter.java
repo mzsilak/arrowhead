@@ -41,7 +41,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Type;
 
 @Entity
-@Table(name = "event_filter", uniqueConstraints = {@UniqueConstraint(columnNames = {"event_type", "consumer_system_id"})})
+@Table(name = "event_filter", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"event_type", "consumer_system_id"})})
 public class EventFilter {
 
   @Id
@@ -91,8 +92,9 @@ public class EventFilter {
   public EventFilter() {
   }
 
-  public EventFilter(String eventType, ArrowheadSystem consumer, Set<ArrowheadSystem> sources, ZonedDateTime startDate, ZonedDateTime endDate,
-                     Map<String, String> filterMetadata, String notifyUri, boolean matchMetadata) {
+  public EventFilter(String eventType, ArrowheadSystem consumer, Set<ArrowheadSystem> sources, ZonedDateTime startDate,
+                     ZonedDateTime endDate, Map<String, String> filterMetadata, String notifyUri,
+                     boolean matchMetadata) {
     this.eventType = eventType;
     this.consumer = consumer;
     this.sources = sources;
@@ -207,5 +209,15 @@ public class EventFilter {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("eventType", eventType).add("consumer", consumer).toString();
+  }
+
+  public void partialUpdateFilter(EventFilter other) {
+    this.eventType = other.eventType;
+    this.consumer = other.consumer;
+    this.startDate = other.startDate;
+    this.endDate = other.endDate;
+    this.filterMetadata = other.filterMetadata;
+    this.notifyUri = other.notifyUri;
+    this.matchMetadata = other.matchMetadata;
   }
 }

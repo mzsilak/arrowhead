@@ -10,6 +10,7 @@ package eu.arrowhead.core.serviceregistry_sql;
 import eu.arrowhead.common.DatabaseManager;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
+import eu.arrowhead.common.database.EventFilter;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
 import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
@@ -33,7 +34,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("serviceregistry/mgmt")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -42,7 +44,7 @@ public class ServiceRegistryApi {
 
   private final HashMap<String, Object> restrictionMap = new HashMap<>();
   private static final DatabaseManager dm = DatabaseManager.getInstance();
-  private static final Logger log = Logger.getLogger(ServiceRegistryApi.class.getName());
+  private static final Logger log = LogManager.getLogger(ServiceRegistryApi.class.getName());
 
   @GET
   @Produces(MediaType.TEXT_PLAIN)
@@ -216,41 +218,25 @@ public class ServiceRegistryApi {
   }
 
   @PUT
-  @Path("update")
-  public Response updateServiceRegistryEntry(@Valid ServiceRegistryEntry entry) {
-    entry.toDatabase();
-    restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
-    ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
-    if (service == null) {
-      log.info("updateServiceRegistryEntry throws DataNotFoundException");
-      throw new DataNotFoundException("Requested Service Registry entry not found in the database.");
-    }
-
-    restrictionMap.clear();
-    restrictionMap.put("systemName", entry.getProvider().getSystemName());
-    restrictionMap.put("address", entry.getProvider().getAddress());
-    restrictionMap.put("port", entry.getProvider().getPort());
-    ArrowheadSystem provider = dm.get(ArrowheadSystem.class, restrictionMap);
-    if (provider == null) {
-      log.info("updateServiceRegistryEntry throws DataNotFoundException");
-      throw new DataNotFoundException("Requested Service Registry entry not found in the database.");
-    }
-
-    restrictionMap.clear();
-    restrictionMap.put("provider", provider);
-    restrictionMap.put("providedService", service);
-    ServiceRegistryEntry retreivedEntry = dm.get(ServiceRegistryEntry.class, restrictionMap);
-    if (retreivedEntry == null) {
-      log.info("updateServiceRegistryEntry throws DataNotFoundException");
-      throw new DataNotFoundException("Requested Service Registry entry not found in the database.");
-    }
-    retreivedEntry.setServiceURI(entry.getServiceURI());
-    retreivedEntry.setEndOfValidity(entry.getEndOfValidity());
-    retreivedEntry = dm.merge(retreivedEntry);
-    retreivedEntry.fromDatabase(false);
-
+  @Path("update/{id}")
+  public Response updateServiceRegistryEntry(@PathParam("id") long id, @Valid ServiceRegistryEntry updatedEntry) {
+    updatedEntry.toDatabase();
+    ServiceRegistryEntry entry = dm.get(ServiceRegistryEntry.class, id).orElseThrow(
+        () -> new DataNotFoundException("ServiceRegistryEntry not found with id: " + id));
+    entry.updateEntryWith(updatedEntry);
+    entry = dm.merge(entry);
     log.info("updateServiceRegistryEntry successfully returns.");
-    return Response.status(Status.ACCEPTED).entity(retreivedEntry).build();
+    return Response.ok().entity(entry).build();
+  }
+
+  @PUT
+  @Path("subscriptions/{id}")
+  public Response updateEventSubscriptionById(@PathParam("id") long id, @Valid EventFilter updatedFilter) {
+    EventFilter filter = dm.get(EventFilter.class, id)
+                           .orElseThrow(() -> new DataNotFoundException("EventFilter not found with id: " + id));
+    filter.partialUpdateFilter(updatedFilter);
+    filter = dm.merge(filter);
+    return Response.ok().entity(filter).build();
   }
 
   @DELETE

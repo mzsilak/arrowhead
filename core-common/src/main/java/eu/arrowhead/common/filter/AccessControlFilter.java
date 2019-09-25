@@ -20,12 +20,13 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class AccessControlFilter implements ContainerRequestFilter {
 
-  protected static final Logger log = Logger.getLogger(AccessControlFilter.class.getName());
-
+  protected static final Logger log = LogManager.getLogger(AccessControlFilter.class.getName());
+  @Context
   protected Configuration configuration;
 
   // serverFields contains: coreSystemName, cloudName.operator.arrowhead.eu

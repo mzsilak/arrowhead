@@ -21,7 +21,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class InsecureServerSocketThread extends Thread {
 
@@ -32,7 +33,7 @@ public class InsecureServerSocketThread extends Thread {
   private GatewaySession gatewaySession;
 
   private static Boolean isFirstMessage = true;
-  private static final Logger log = Logger.getLogger(InsecureServerSocketThread.class.getName());
+  private static final Logger log = LogManager.getLogger(InsecureServerSocketThread.class.getName());
 
   public InsecureServerSocketThread(GatewaySession gatewaySession, int port, ConnectToConsumerRequest connectionRequest) {
     this.port = port;

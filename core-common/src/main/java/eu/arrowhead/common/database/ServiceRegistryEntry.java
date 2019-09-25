@@ -207,4 +207,14 @@ public class ServiceRegistryEntry {
     }
   }
 
+  public void updateEntryWith(ServiceRegistryEntry other) {
+    this.providedService = other.providedService;
+    this.provider = other.provider;
+    this.serviceURI = other.serviceURI;
+    this.udp = other.udp;
+    this.endOfValidity = other.endOfValidity;
+    this.version = other.version;
+    this.metadata = other.metadata;
+  }
+
 }

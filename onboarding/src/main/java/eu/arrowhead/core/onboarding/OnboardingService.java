@@ -40,7 +40,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -63,7 +64,7 @@ public class OnboardingService {
   private String caBaseUri;
   private String srBaseUri;
 
-  private final Logger log = Logger.getLogger(OnboardingService.class.getName());
+  private final Logger log = LogManager.getLogger(OnboardingService.class);
 
   public OnboardingService() {
     props = Utility.getProp();

@@ -25,7 +25,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author FHB
@@ -35,11 +36,10 @@ import org.apache.log4j.Logger;
 @Produces(MediaType.APPLICATION_JSON)
 public class SystemRegistryResource implements RegistryResource<SystemRegistryEntry, Response> {
 
-  private final Logger logger;
+  private final Logger logger = LogManager.getLogger(SystemRegistryResource.class);
   private final SystemRegistryService registryService;
 
   public SystemRegistryResource() {
-    logger = Logger.getLogger(SystemRegistryResource.class);
     registryService = new SystemRegistryService();
   }
 

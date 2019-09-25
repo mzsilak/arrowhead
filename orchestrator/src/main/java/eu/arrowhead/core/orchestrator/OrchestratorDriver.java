@@ -40,7 +40,8 @@ import java.util.Set;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Contains miscellaneous helper functions for the Orchestration process. The main functions of the Orchestration process used by the REST resource
@@ -50,7 +51,7 @@ import org.apache.log4j.Logger;
  */
 final class OrchestratorDriver {
 
-  private static final Logger log = Logger.getLogger(OrchestratorService.class.getName());
+  private static final Logger log = LogManager.getLogger(OrchestratorService.class.getName());
 
   private OrchestratorDriver() throws AssertionError {
     throw new AssertionError("OrchestratorDriver is a non-instantiable class");

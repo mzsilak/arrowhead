@@ -18,14 +18,15 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 //Legacy version of the GatekeeperACF, with certificates containing the system group field
 //@Provider Uncomment this line to activate the filter
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class SupportAccessControlFilter implements ContainerRequestFilter {
 
-  private static final Logger log = Logger.getLogger(SupportAccessControlFilter.class.getName());
+  private static final Logger log = LogManager.getLogger(SupportAccessControlFilter.class.getName());
   @Context
   private Configuration configuration;
 

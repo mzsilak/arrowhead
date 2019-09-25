@@ -33,7 +33,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 
@@ -45,7 +46,7 @@ import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 @Produces(MediaType.APPLICATION_JSON)
 public class OnboardingResource {
 
-    private final Logger log = Logger.getLogger(OnboardingResource.class.getName());
+    private final Logger log = LogManager.getLogger(OnboardingResource.class);
     private final OnboardingService service;
 
     public OnboardingResource() {
