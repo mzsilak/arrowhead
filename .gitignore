@@ -28,6 +28,7 @@
 ### General ###
 /config/
 *.properties
+!log4j2.properties
 */target
 *.txt
 *app.conf

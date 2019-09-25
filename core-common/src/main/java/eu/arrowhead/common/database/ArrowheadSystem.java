@@ -23,6 +23,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.validator.constraints.NotBlank;
 
 @Entity
 @Table(name = "arrowhead_system", uniqueConstraints = {
@@ -36,8 +37,9 @@ public class ArrowheadSystem {
 
   @NotBlank
   @Size(max = 255, message = "System name must be 255 character at max")
-  @Pattern(regexp = "[\\p{L}0-9-_:]+", message = "System name can only contain alphanumerical characters and some "
-      + "special characters (dash, underscore and colon)")
+  @Pattern(regexp = "[\\p{L}0-9-_:]+", message =
+      "System name can only contain alphanumerical characters and some special characters (dash, "
+      + "underscore and colon)")
   @Column(name = "system_name")
   private String systemName;
 

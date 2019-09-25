@@ -24,11 +24,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class RegistryUtils {
 
-  private static final Logger log = Logger.getLogger(RegistryUtils.class.getName());
+  private static final Logger log = LogManager.getLogger(RegistryUtils.class.getName());
 
   static DnsSDRegistrator createRegistrator() throws DnsSDException {
     // Get the DNS specific settings from global static variables (from prop files) and then set up Registrator

@@ -41,12 +41,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("unused")
 public final class SecurityUtils {
 
-  private static final Logger log = Logger.getLogger(SecurityUtils.class.getName());
+  private static final Logger log = LogManager.getLogger(SecurityUtils.class.getName());
 
   public static KeyStore loadKeyStore(String filePath, String pass) {
     try {

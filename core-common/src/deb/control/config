@@ -67,16 +67,8 @@ fi
 # Run dialogs
 db_go || true
 
-# Create user
-adduser --system --no-create-home --group arrowhead
-
 # Create directories
 mkdir -p ${AH_CLOUDS_DIR}/
-if [ ! -d /var/log/arrowhead ]; then
-    mkdir -p /var/log/arrowhead
-    chown arrowhead:adm /var/log/arrowhead
-    chmod 750 /var/log/arrowhead
-fi
 
 # Reload global variables
 . /usr/share/arrowhead/conf/ahconf.sh

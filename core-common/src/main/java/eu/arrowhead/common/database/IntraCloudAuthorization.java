@@ -127,4 +127,10 @@ public class IntraCloudAuthorization {
   public String toString() {
     return MoreObjects.toStringHelper(this).add("consumer", consumer).add("provider", provider).add("service", service).toString();
   }
+
+  public void updateEntryWith(IntraCloudAuthorization other) {
+    this.consumer = other.consumer;
+    this.provider = other.provider;
+    this.service = other.service;
+  }
 }

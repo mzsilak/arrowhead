@@ -1,7 +1,7 @@
 [![Build Status](https://api.travis-ci.com/arrowhead-f/core-java.svg?branch=develop)](https://travis-ci.com/arrowhead-f/core-java)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?colorB=green)](https://github.com/arrowhead-f/core-java/blob/master/LICENSE)
 
-# Arrowhead Framework 4.1
+# Arrowhead Framework 4.1.3
 
 [Arrowhead](http://www.arrowhead.eu/) (and its continuation, [Productive4.0](https://productive40.eu/)) is an ambitious holistic innovation project,
  meant to open the doors to the potentials of Digital Industry and to maintain a leadership position of the industries in Europe. All partners involved will work on creating the capability to efficiently design and integrate hardware and software of Internet of Things (IoT) devices. Linking the real with the digital world takes more than just adding software to the hardware.

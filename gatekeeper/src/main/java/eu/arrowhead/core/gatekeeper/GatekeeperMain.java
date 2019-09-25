@@ -46,8 +46,8 @@ import java.util.TimerTask;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -55,6 +55,7 @@ import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator.GenericStoreException;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 public class GatekeeperMain implements NeedsCoreSystemService {
@@ -80,7 +81,7 @@ public class GatekeeperMain implements NeedsCoreSystemService {
   private static String[] GATEWAY_PROVIDER_URI;
 
   private static final TypeSafeProperties props;
-  private static final Logger log = Logger.getLogger(GatekeeperMain.class.getName());
+  private static final Logger log = LogManager.getLogger(GatekeeperMain.class.getName());
 
   private static final String GET_CORE_SYSTEM_URLS_ERROR_MESSAGE = "The Gatekeeper core system has not acquireq the addresses of the "
       + "Authorization, Orchestrator and Gateway core systems yet from the Service Registry. Wait 15 seconds and retry your request";
@@ -88,7 +89,6 @@ public class GatekeeperMain implements NeedsCoreSystemService {
   static {
     props = Utility.getProp();
     DatabaseManager.init();
-    PropertyConfigurator.configure(props);
     USE_GATEWAY = props.getBooleanProperty("use_gateway", false);
     TIMEOUT = props.getIntProperty("timeout", 30000);
   }
@@ -216,6 +216,11 @@ public class GatekeeperMain implements NeedsCoreSystemService {
     }
     config.packages("eu.arrowhead.common.exception", "eu.arrowhead.common.json", "eu.arrowhead.common.filter", "eu.arrowhead.core.gatekeeper.filter");
     config.packages("io.swagger.v3.jaxrs2.integration.resources");
+    if (Boolean.valueOf(System.getProperty("debug_mode", "false")))
+      config.register(new LoggingFeature(
+          org.apache.logging.log4j.jul.LogManager.getLogManager().getLogger(GatekeeperMain.class.getName()),
+          LoggingFeature.Verbosity.PAYLOAD_ANY
+      ));
 
     URI uri = UriBuilder.fromUri(url).build();
     try {
@@ -245,6 +250,11 @@ public class GatekeeperMain implements NeedsCoreSystemService {
     }
     config.packages("eu.arrowhead.common.exception", "eu.arrowhead.common.json", "eu.arrowhead.common.filter", "eu.arrowhead.core.gatekeeper.filter");
     config.packages("io.swagger.v3.jaxrs2.integration.resources");
+    if (Boolean.valueOf(System.getProperty("debug_mode", "false")))
+      config.register(new LoggingFeature(
+          org.apache.logging.log4j.jul.LogManager.getLogManager().getLogger(GatekeeperMain.class.getName()),
+          LoggingFeature.Verbosity.PAYLOAD_ANY
+      ));
 
     String gatekeeperKeystorePath = props.getProperty("gatekeeper_keystore");
     String gatekeeperKeystorePass = props.getProperty("gatekeeper_keystore_pass");

@@ -22,7 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SecureSocketThread extends Thread {
 
@@ -34,7 +35,7 @@ public class SecureSocketThread extends Thread {
   private GatewayEncryption gatewayEncryption = new GatewayEncryption();
 
   private static Boolean isAesKey = true;
-  private static final Logger log = Logger.getLogger(SecureSocketThread.class.getName());
+  private static final Logger log = LogManager.getLogger(SecureSocketThread.class.getName());
 
   public SecureSocketThread(GatewaySession gatewaySession, String queueName, String controlQueueName, ConnectToProviderRequest connectionRequest) {
     this.gatewaySession = gatewaySession;

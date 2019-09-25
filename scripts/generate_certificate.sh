@@ -10,9 +10,9 @@ AH_PASS_CERT="123456"
 cloud_name=${1}
 name=${2}
 
-dir=$(dirname "$0")
-master_store=${dir}/../certificates/master.p12
-cloud_store=${dir}/../certificates/${cloud_name}/${cloud_name}.p12
+dir="$(dirname "$0")"
+master_store="${dir}/../certificates/master.p12"
+cloud_store="${dir}/../certificates/${cloud_name}/${cloud_name}.p12"
 
 cloud_cn="${cloud_name}.${AH_OPERATOR}.arrowhead.eu"
 cn="${name}.${cloud_cn}"
@@ -65,6 +65,7 @@ keytool -certreq \
     -storepass ${AH_PASS_CERT} \
 | keytool -gencert \
     -alias ${cloud_cn} \
+    -validity 3650 \
     -keypass ${AH_PASS_CERT} \
     -keystore ${cloud_store} \
     -storepass ${AH_PASS_CERT} \
