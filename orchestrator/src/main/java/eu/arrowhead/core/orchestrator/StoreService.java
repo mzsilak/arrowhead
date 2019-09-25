@@ -93,7 +93,7 @@ public final class StoreService {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  static boolean hasMatchingInterfaces(ArrowheadService savedService, ArrowheadService givenService) {
+  private static boolean hasMatchingInterfaces(ArrowheadService savedService, ArrowheadService givenService) {
     if (givenService.getInterfaces().isEmpty()) {
       return savedService.getInterfaces().isEmpty();
     }

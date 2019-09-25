@@ -21,7 +21,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * REST resource for the Orchestrator Core System.
@@ -31,7 +32,7 @@ import org.apache.log4j.Logger;
 @Produces(MediaType.APPLICATION_JSON)
 public class OrchestratorResource {
 
-  private static final Logger log = Logger.getLogger(OrchestratorResource.class.getName());
+  private static final Logger log = LogManager.getLogger(OrchestratorResource.class.getName());
 
   /**
    * Simple test method to see if the http server where this resource is registered works or not.
