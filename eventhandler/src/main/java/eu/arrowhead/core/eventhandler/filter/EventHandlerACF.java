@@ -9,54 +9,65 @@ package eu.arrowhead.core.eventhandler.filter;
 
 import eu.arrowhead.common.Utility;
 import eu.arrowhead.common.database.EventFilter;
-import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.filter.AccessControlFilter;
+import eu.arrowhead.common.filter.PrincipalSubjectData;
 import eu.arrowhead.common.messages.PublishEvent;
-import eu.arrowhead.common.misc.SecurityUtils;
+import java.net.URI;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION) //2nd highest priority constant, this filter gets executed after the SecurityFilter
 public class EventHandlerACF extends AccessControlFilter {
 
-  @Override
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientCN)) {
-      log.info(clientCN + " is not valid common name, access denied!");
-      return false;
-    }
+  private final PrincipalSubjectData sysop;
+  private final PrincipalSubjectData gatekeeper;
 
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
-    String[] clientFields = clientCN.split("\\.", 2);
-    if (requestTarget.contains("mgmt")) {
-      return clientCN.equalsIgnoreCase("sysop." + serverFields[1]);
-    }
-    if (requestTarget.contains("publish")) {
-      PublishEvent event = Utility.fromJson(requestJson, PublishEvent.class);
-      if (!clientFields[0].equalsIgnoreCase(event.getSource().getSystemName())) {
-        log.error("Source system name and cert common name do not match! Event publishing denied!");
-        throw new AuthException("Source system " + event.getSource().getSystemName() + " and cert common name (" + clientCN + ") do not match!");
-      }
-    } else if (requestTarget.endsWith("subscription")) {
-      EventFilter filter = Utility.fromJson(requestJson, EventFilter.class);
-      if (!clientFields[0].equalsIgnoreCase(filter.getConsumer().getSystemName())) {
-        log.error("Consumer system name and cert common name do not match! Event subscription/unsubscribe denied!");
-        throw new AuthException("Consumer system " + filter.getConsumer().getSystemName() + " and cert common name (" + clientCN + ") do not match!");
-      }
-    } else {
-      //Only the DELETE method based unsubscribe method left
-      String[] uriParts = requestTarget.split("/");
-      if (!clientFields[0].equalsIgnoreCase(uriParts[uriParts.length - 1])) {
-        log.error("Consumer system name and cert common name do not match! Event unsubscribe denied!");
-        throw new AuthException("Consumer system " + uriParts[uriParts.length - 1] + " and cert common name (" + clientCN + ") do not match!");
-      }
-    }
-
-    // All requests from the local cloud are allowed
-    return serverFields[1].equalsIgnoreCase(clientFields[1]);
+  public EventHandlerACF(@Context Configuration configuration) {
+    super(configuration);
+    sysop = serverSubject.createWithPrefix("sysop");
+    gatekeeper = serverSubject.createWithPrefix("gatekeeper");
   }
 
+  @Override
+  public void verifyClientAuthorized(final PrincipalSubjectData clientData, String method, URI requestTarget,
+                                     String requestJson) {
+
+    verifyNotAnonymous(clientData, method, requestTarget);
+
+    final String requestPath = requestTarget.getPath();
+
+    if (requestPath.contains("mgmt")) {
+      //Only the local System Operator can use these methods
+      verifyMatches(clientData, requestTarget, sysop);
+    } else {
+
+      final String eventName;
+
+      if (requestPath.contains("publish")) {
+        PublishEvent event = Utility.fromJson(requestJson, PublishEvent.class);
+        eventName = event.getSource().getSystemName();
+      } else if (requestPath.contains("subscription")) {
+        EventFilter filter = Utility.fromJson(requestJson, EventFilter.class);
+        eventName = filter.getConsumer().getSystemName();
+      } else {
+        String[] uriParts = requestPath.split("/");
+        eventName = uriParts[uriParts.length - 1];
+      }
+
+      if (!clientData.getCommonName().equalsIgnoreCase(eventName)) {
+        throwAuthException(
+          "JSON system name '" + eventName + "' and certificate common name '" + clientData.getCommonName()
+            + "' do not " + "match.");
+      }
+
+      // Only requests from the local cloud are allowed
+      if (!serverSubject.getSuffix().equals(clientData.getSubject())) {
+        throwAccessDeniedException(clientData.getCommonName(), method, requestTarget.toString());
+      }
+    }
+  }
 }

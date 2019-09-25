@@ -11,6 +11,7 @@ import eu.arrowhead.common.DatabaseManager;
 import eu.arrowhead.common.database.ArrowheadService;
 import eu.arrowhead.common.database.ArrowheadSystem;
 import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.DuplicateEntryException;
 import eu.arrowhead.common.messages.ServiceQueryForm;
 import eu.arrowhead.common.messages.ServiceQueryResult;
@@ -26,7 +27,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("serviceregistry")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -36,7 +38,7 @@ public class ServiceRegistryResource {
   static final DatabaseManager dm = DatabaseManager.getInstance();
 
   private final HashMap<String, Object> restrictionMap = new HashMap<>();
-  private static final Logger log = Logger.getLogger(ServiceRegistryResource.class.getName());
+  private static final Logger log = LogManager.getLogger(ServiceRegistryResource.class.getName());
 
   @GET
   @Produces(MediaType.TEXT_PLAIN)
@@ -48,6 +50,13 @@ public class ServiceRegistryResource {
   @Path("register")
   public Response registerService(@Valid ServiceRegistryEntry entry) {
     entry.toDatabase();
+
+    ArrowheadSystem provider = entry.getProvider();
+    if("0.0.0.0".equals(provider.getAddress()))
+    {
+      throw new BadPayloadException("0.0.0.0 is not a valid destination IP address");
+    }
+
     restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
     ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
     if (service == null) {
@@ -59,10 +68,12 @@ public class ServiceRegistryResource {
     entry.setProvidedService(service);
 
     restrictionMap.clear();
-    restrictionMap.put("systemName", entry.getProvider().getSystemName());
-    restrictionMap.put("address", entry.getProvider().getAddress());
-    restrictionMap.put("port", entry.getProvider().getPort());
-    ArrowheadSystem provider = dm.get(ArrowheadSystem.class, restrictionMap);
+    restrictionMap.put("systemName", provider.getSystemName());
+    restrictionMap.put("address", provider.getAddress());
+    restrictionMap.put("port", provider.getPort());
+    provider = dm.get(ArrowheadSystem.class, restrictionMap);
+
+
     if (provider == null) {
       provider = dm.save(entry.getProvider());
     } else {

@@ -30,7 +30,8 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Contains miscellaneous helper functions for the Gateway.
@@ -44,7 +45,7 @@ public class GatewayService {
   private static final int keySize = 16;
   private static final ConcurrentHashMap<Integer, Boolean> portAllocationMap = GatewayService
       .initPortAllocationMap(new ConcurrentHashMap<>(), GatewayMain.minPort, GatewayMain.maxPort);
-  private static final Logger log = Logger.getLogger(GatewayService.class.getName());
+  private static final Logger log = LogManager.getLogger(GatewayService.class.getName());
 
   private GatewayService() throws AssertionError {
     throw new AssertionError("GatewayService is a non-instantiable class");

@@ -32,11 +32,12 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 final class QoSManagerService {
 
-  private static final Logger log = Logger.getLogger(QoSManagerService.class.getName());
+  private static final Logger log = LogManager.getLogger(QoSManagerService.class.getName());
   private static final VerifierAlgorithmFactory algorithmFactory = VerifierAlgorithmFactory.getInstance();
   private static final DriversFactory driverFactory = DriversFactory.getInstance();
   private static final DatabaseManager dm = DatabaseManager.getInstance();

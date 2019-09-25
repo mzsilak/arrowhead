@@ -15,6 +15,7 @@ import javax.validation.Valid;
  */
 public interface RegistryResource<T, R> extends Resource<R> {
 
+  final static String LOOKUP_ID = "id";
   final static String LOOKUP_PATH = "/lookup/{id}";
   final static String PUBLISH_PATH = "/publish";
   final static String UNPUBLISH_PATH = "/unpublish";

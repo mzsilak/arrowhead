@@ -12,11 +12,12 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import java.util.Optional;
 import java.util.TimerTask;
 import javax.ws.rs.core.Response;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class GetAuthPublicKeyTask extends TimerTask {
 
-  private static final Logger log = Logger.getLogger(GetAuthPublicKeyTask.class.getName());
+  private static final Logger log = LogManager.getLogger(GetAuthPublicKeyTask.class);
 
   @Override
   public void run() {

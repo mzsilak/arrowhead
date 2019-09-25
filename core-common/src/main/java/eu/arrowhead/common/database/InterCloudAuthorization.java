@@ -109,4 +109,9 @@ public class InterCloudAuthorization {
   public String toString() {
     return MoreObjects.toStringHelper(this).add("cloud", cloud).add("service", service).toString();
   }
+
+  public void updateEntryWith(InterCloudAuthorization other) {
+    this.cloud = other.cloud;
+    this.service = other.service;
+  }
 }

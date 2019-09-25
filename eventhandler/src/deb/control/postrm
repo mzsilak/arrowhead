@@ -32,6 +32,7 @@ case "$1" in
         rm -f \
             /var/log/arrowhead/${SYSTEM_NAME}.log \
             ${SYSTEM_DIR}/default.conf \
+            ${SYSTEM_DIR}/log4j2.properties \
             ${SYSTEM_DIR}/${SYSTEM_NAME}.p12
         rmdir ${SYSTEM_DIR} 2>/dev/null || true
         rmdir /var/log/arrowhead 2>/dev/null || true

@@ -1,19 +1,20 @@
 package eu.arrowhead.core.onboarding.model;
 
 import eu.arrowhead.common.misc.CoreSystem;
+import eu.arrowhead.common.misc.CoreSystemService;
 import java.net.URI;
 
 public class ServiceEndpoint {
 
-  private final CoreSystem system;
+  private final CoreSystemService system;
   private final URI uri;
 
-  public ServiceEndpoint(final CoreSystem system, final URI uri) {
-    this.system = system;
+  public ServiceEndpoint(final CoreSystemService service, final URI uri) {
+    this.system = service;
     this.uri = uri;
   }
 
-  public CoreSystem getSystem() {
+  public CoreSystemService getService() {
     return system;
   }
 

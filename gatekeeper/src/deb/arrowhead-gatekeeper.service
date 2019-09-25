@@ -5,7 +5,9 @@ Requires=arrowhead-serviceregistry-sql.service arrowhead-authorization.service a
 
 [Service]
 WorkingDirectory=/etc/arrowhead/systems/gatekeeper
-ExecStart=/usr/bin/java -jar /usr/share/arrowhead/arrowhead-gatekeeper.jar -d -daemon -tls
+ExecStart=/usr/bin/java -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+                        -Dlog4j.configurationFile=log4j2.properties \
+                        -jar /usr/share/arrowhead/arrowhead-gatekeeper.jar -d -daemon -tls
 TimeoutStopSec=5
 Type=simple
 User=arrowhead

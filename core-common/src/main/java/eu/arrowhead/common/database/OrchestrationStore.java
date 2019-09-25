@@ -272,4 +272,17 @@ public class OrchestrationStore implements Comparable<OrchestrationStore> {
       throw new BadPayloadException("Default store entries can only have intra-cloud providers!");
     }
   }
+
+  public void updateEntryWith(OrchestrationStore other) {
+    this.service = other.service;
+    this.consumer = other.consumer;
+    this.providerSystem = other.providerSystem;
+    this.providerCloud = other.providerCloud;
+    this.priority = other.priority;
+    this.defaultEntry = other.defaultEntry;
+    this.name = other.name;
+    this.lastUpdated = other.lastUpdated;
+    this.instruction = other.instruction;
+    this.attributes = other.attributes;
+  }
 }
