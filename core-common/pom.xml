@@ -31,12 +31,6 @@
   <dependencies>
 
     <dependency>
-      <groupId>eu.arrowhead</groupId>
-      <artifactId>arrowhead-common</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
       <!-- Ultimate JDBC Connection Pool. -->
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
@@ -55,6 +49,11 @@
     </dependency>
 
     <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-grizzly2-http</artifactId>
+    </dependency>
+
+    <dependency>
       <!-- Jersey core Servlet 2.x implementation. -->
       <groupId>org.glassfish.jersey.containers</groupId>
       <artifactId>jersey-container-servlet-core</artifactId>
@@ -64,6 +63,12 @@
       <!-- Jersey extension module providing support for Bean Validation (JSR-349) API. -->
       <groupId>org.glassfish.jersey.ext</groupId>
       <artifactId>jersey-bean-validation</artifactId>
+      <version>2.29.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.glassfish.jersey.inject</groupId>
+      <artifactId>jersey-hk2</artifactId>
     </dependency>
 
     <dependency>
@@ -107,11 +112,10 @@
 
     <!-- JDBC drivers (MySQL, MariaDB, PostgreSQL), only 1 should not be commented based on which database is actually used -->
 
-    <!--<dependency>-->
-      <!--&lt;!&ndash; JDBC Type 4 driver for MySQL. &ndash;&gt;-->
-      <!--<groupId>mysql</groupId>-->
-      <!--<artifactId>mysql-connector-java</artifactId>-->
-    <!--</dependency>-->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+    </dependency>
 
     <!--<dependency>
       <groupId>org.mariadb.jdbc</groupId>
@@ -127,6 +131,16 @@
       <!-- SLF4J LOG4J Binding. -->
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-jul -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jul</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
 
   </dependencies>
@@ -186,6 +200,7 @@
             </goals>
             <configuration>
               <snapshotExpand>true</snapshotExpand>
+              <!--suppress UnresolvedMavenProperty -->
               <snapshotTemplate>[YYMMddHHmm].${git.commit.id.abbrev}</snapshotTemplate>
               <deb>target/${project.artifactId}_${project.version}.deb</deb>
               <verbose>true</verbose>
