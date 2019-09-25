@@ -7,12 +7,14 @@
 
 package eu.arrowhead.common.filter;
 
+import eu.arrowhead.common.ArrowheadMain;
 import eu.arrowhead.common.Utility;
 import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.misc.SecurityUtils;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Configuration;
@@ -23,31 +25,84 @@ import org.apache.log4j.Logger;
 public abstract class AccessControlFilter implements ContainerRequestFilter {
 
   protected static final Logger log = Logger.getLogger(AccessControlFilter.class.getName());
-  @Context
+
   protected Configuration configuration;
+
+  // serverFields contains: coreSystemName, cloudName.operator.arrowhead.eu
+  protected PrincipalSubjectData serverSubject;
+
+  public AccessControlFilter(@Context Configuration configuration)
+  {
+    this.configuration = configuration;
+    String serverCommonName = (String) configuration.getProperty("server_common_name");
+    serverSubject = new PrincipalSubjectData(serverCommonName);
+  }
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
     SecurityContext sc = requestContext.getSecurityContext();
     if (sc.isSecure()) {
-      String requestTarget = Utility.stripEndSlash(requestContext.getUriInfo().getRequestUri().toString());
-      String requestJson = Utility.getRequestPayload(requestContext.getEntityStream());
-      String commonName = SecurityUtils.getCertCNFromSubject(sc.getUserPrincipal().getName());
-      if (!isClientAuthorized(commonName, requestContext.getMethod(), requestTarget, requestJson)) {
-        log.error(commonName + " is unauthorized to access " + requestTarget);
-        throw new AuthException(commonName + " is unauthorized to access " + requestTarget);
+      final PrincipalSubjectData clientSubject;
+      final Principal principal;
+      final URI requestTarget;
+      final String requestJson;
+
+      principal = sc.getUserPrincipal();
+      requestTarget = requestContext.getUriInfo().getRequestUri();
+
+      if (!isWhitelistedURI(requestTarget)) {
+        clientSubject = new PrincipalSubjectData(principal);
+        requestJson = Utility.getRequestPayload(requestContext.getEntityStream());
+        verifyClientAuthorized(clientSubject, requestContext.getMethod(), requestTarget, requestJson);
+        requestContext.setEntityStream(new ByteArrayInputStream(requestJson.getBytes(StandardCharsets.UTF_8)));
       }
-      InputStream in = new ByteArrayInputStream(requestJson.getBytes(StandardCharsets.UTF_8));
-      requestContext.setEntityStream(in);
     }
   }
 
-  public boolean isClientAuthorized(String clientCN, String method, String requestTarget, String requestJson) {
-    String serverCN = (String) configuration.getProperty("server_common_name");
-    String[] serverFields = serverCN.split("\\.", 2);
-    // serverFields contains: coreSystemName, cloudName.operator.arrowhead.eu
+  protected boolean isWhitelistedURI(final URI uri) {
+    final String uriPath = uri.getPath();
+
+    return uriPath.startsWith(ArrowheadMain.SWAGGER_PATH) || uriPath.equals(ArrowheadMain.OPENAPI_PATH);
+  }
+
+  protected void verifyNotAnonymous(final PrincipalSubjectData clientData, String method, URI requestTarget)
+  {
+    if (!clientData.isPresent()) {
+      throwAccessDeniedException("Anonymous user", method, requestTarget.toString());
+    }
+  }
+
+  protected void verifyClientAuthorized(final PrincipalSubjectData clientData, String method, URI requestTarget,
+                                        String requestJson) {
+    verifyNotAnonymous(clientData, method, requestTarget);
 
     //All requests from the local cloud are allowed
-    return SecurityUtils.isKeyStoreCNArrowheadValid(clientCN, serverFields[1]);
+    if (!SecurityUtils.isKeyStoreCNArrowheadValid(clientData.getSubject(), serverSubject.getSuffix())) {
+      throwAccessDeniedException(clientData.getCommonName(), method, requestTarget.toString());
+    }
+  }
+
+  protected void verifyMatches(final PrincipalSubjectData client, final URI requestTarget,
+                               final PrincipalSubjectData... validSystems)
+  {
+    boolean valid = false;
+
+    for(PrincipalSubjectData system : validSystems)
+    {
+      valid |= system.equals(client);
+    }
+    if(!valid)
+    {
+      throwAccessDeniedException(client.getCommonName(), "", requestTarget.toString());
+    }
+  }
+
+  protected void throwAccessDeniedException(final String user, final String method, final String url) throws AuthException {
+    final String message = String.format("\"%s\" is unauthorized to access %s\"%s\"", user, method, url);
+    throwAuthException(message);
+  }
+  protected void throwAuthException(final String message) throws AuthException {
+    log.error(message);
+    throw new AuthException(message);
   }
 }

@@ -9,6 +9,7 @@ package eu.arrowhead.core.systemregistry;
 
 import eu.arrowhead.common.database.SystemRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.misc.registry_interfaces.RegistryResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.apache.log4j.Logger;
 
 /**
  * @author FHB
@@ -33,9 +35,11 @@ import javax.ws.rs.core.Response.Status;
 @Produces(MediaType.APPLICATION_JSON)
 public class SystemRegistryResource implements RegistryResource<SystemRegistryEntry, Response> {
 
+  private final Logger logger;
   private final SystemRegistryService registryService;
 
   public SystemRegistryResource() {
+    logger = Logger.getLogger(SystemRegistryResource.class);
     registryService = new SystemRegistryService();
   }
 
@@ -52,6 +56,7 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     SystemRegistryEntry returnValue;
     Response response;
 
+    logger.info("Lookup: " + id);
     returnValue = registryService.lookup(id);
     response = Response.status(Status.OK).entity(returnValue).build();
 
@@ -64,6 +69,12 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     SystemRegistryEntry returnValue;
     Response response;
 
+    logger.info("publish: " + entry);
+
+    if("0.0.0.0".equals(entry.getProvidedSystem().getAddress()))
+    {
+      throw new BadPayloadException("0.0.0.0 is not a valid destination IP address");
+    }
     returnValue = registryService.publish(entry);
     response = Response.status(Status.CREATED).entity(returnValue).build();
 
@@ -76,6 +87,7 @@ public class SystemRegistryResource implements RegistryResource<SystemRegistryEn
     SystemRegistryEntry returnValue;
     Response response;
 
+    logger.info("unpublish: " + entry);
     returnValue = registryService.unpublish(entry);
     response = Response.status(Status.OK).entity(returnValue).build();
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+mysql -u root -p -e "USE arrowhead;select intra_cloud_authorization.id as Rule_id, as2.system_name as Consumer_name, as2.id as Consumer_id, as1.system_name as Provider_name, as1.id as Provider_id, arrowhead_service.service_definition as Service_def, arrowhead_service.id as Service_id from arrowhead_system as2 inner join (arrowhead_system as1 inner join (intra_cloud_authorization inner join arrowhead_service on intra_cloud_authorization.arrowhead_service_id=arrowhead_service.id) on as1.id=intra_cloud_authorization.provider_system_id) on as2.id=intra_cloud_authorization.consumer_system_id;"
+

@@ -20,6 +20,7 @@ import eu.arrowhead.common.misc.TypeSafeProperties;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -52,14 +53,18 @@ public abstract class ArrowheadMain {
   public static final List<String> certFields = Collections
       .unmodifiableList(Arrays.asList("keystore", "keystorepass", "keypass", "truststore", "truststorepass"));
   public static final Map<String, String> secureServerMetadata = Collections.singletonMap("security", "certificate");
+  public static final String SWAGGER_PATH = "/api";
+  public static final String OPENAPI_PATH = "/openapi.json";
 
   protected String srBaseUri;
+  protected boolean isSecure = false;
+  protected String baseUri;
   protected final TypeSafeProperties props = Utility.getProp();
 
+  private boolean requestClientCertificate = true;
   private boolean daemon = false;
   private CoreSystem coreSystem;
   private HttpServer server;
-  private String baseUri;
   private String base64PublicKey;
   private int registeringTries = 1;
 
@@ -75,7 +80,6 @@ public abstract class ArrowheadMain {
     packages = addSwaggerToPackages(packages);
     this.coreSystem = coreSystem;
 
-    boolean isSecure = false;
     //Read in command line arguments
     for (String arg : args) {
       switch (arg) {
@@ -90,6 +94,7 @@ public abstract class ArrowheadMain {
         case "-tls":
           System.setProperty("is_secure", "true");
           isSecure = true;
+          Utility.setSecure(true);
           break;
       }
     }
@@ -118,6 +123,12 @@ public abstract class ArrowheadMain {
                             : props
                        .getIntProperty("sr_insecure_port", CoreSystem.SERVICE_REGISTRY_SQL.getInsecurePort());
       srBaseUri = Utility.getUri(srAddress, srPort, "serviceregistry", isSecure, true);
+      Utility.setServiceRegistryUri(srBaseUri);
+      useSRService(true);
+    }
+    else
+    {
+      srBaseUri = Utility.getUri(address, port, "serviceregistry", isSecure, false);
       Utility.setServiceRegistryUri(srBaseUri);
       useSRService(true);
     }
@@ -207,9 +218,10 @@ public abstract class ArrowheadMain {
 
     URI uri = UriBuilder.fromUri(baseUri).build();
     try {
+      // instead of "need" we only "want" a client certificate. we will verify the certificate in the filter
       server = GrizzlyHttpServerFactory.createHttpServer(uri, config, true,
                                                          new SSLEngineConfigurator(sslCon).setClientMode(false)
-                                                                                          .setNeedClientAuth(true),
+                                                                                          .setWantClientAuth(requestClientCertificate),
                                                          false);
       configureServer(server);
       server.start();
@@ -224,7 +236,7 @@ public abstract class ArrowheadMain {
   private void configureServer(HttpServer server) {
     //Add swagger UI to the server
     final HttpHandler httpHandler = new CLStaticHttpHandler(HttpServer.class.getClassLoader(), "/swagger/");
-    server.getServerConfiguration().addHttpHandler(httpHandler, "/api");
+    server.getServerConfiguration().addHttpHandler(httpHandler, SWAGGER_PATH);
     //Allow message payload for GET and DELETE requests - ONLY to provide custom error message for them
     server.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
   }
@@ -245,7 +257,18 @@ public abstract class ArrowheadMain {
     final URI uri = UriBuilder.fromUri(baseUri).build();
     final boolean isSecure = uri.getScheme().equals("https");
     final String interfaceName = isSecure ? "HTTP-SECURE-JSON" : "HTTP-INSECURE-JSON";
-    final ArrowheadSystem provider = new ArrowheadSystem(coreSystem.name(), uri.getHost(), uri.getPort(),
+
+    String hostAddress = uri.getHost();
+    if("0.0.0.0".equals(uri.getHost()))
+    {
+      try {
+        hostAddress = Utility.getIpAddress();
+      } catch (SocketException e) {
+        hostAddress = "127.0.0.1";
+      }
+    }
+
+    final ArrowheadSystem provider = new ArrowheadSystem(coreSystem.name(), hostAddress, uri.getPort(),
                                                          base64PublicKey);
 
     for (CoreSystemService service : coreSystem.getServices()) {
@@ -286,6 +309,17 @@ public abstract class ArrowheadMain {
         Utility.sendRequest(UriBuilder.fromUri(srBaseUri).path("remove").build().toString(), "PUT", srEntry);
       }
     }
+
+    systemRegistrationCallback(provider);
+  }
+
+  protected void systemRegistrationCallback(ArrowheadSystem system) {
+    // noop
+  }
+
+  protected void setRequestClientCertificate(final boolean requestClientCertificate)
+  {
+    this.requestClientCertificate = requestClientCertificate;
   }
 
   private String[] addSwaggerToPackages(String[] packages) {

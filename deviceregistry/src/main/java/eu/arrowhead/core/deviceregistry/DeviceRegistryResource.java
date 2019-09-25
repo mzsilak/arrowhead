@@ -9,6 +9,7 @@ package eu.arrowhead.core.deviceregistry;
 
 import eu.arrowhead.common.database.DeviceRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.misc.registry_interfaces.RegistryResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,21 +25,20 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
-import eu.arrowhead.common.RegistryResource;
 
 @Path("deviceregistry")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEntry, Response> {
 
-  private final Logger log = Logger.getLogger(DeviceRegistryResource.class.getName());
+  private final Logger logger = Logger.getLogger(DeviceRegistryResource.class.getName());
   private final DeviceRegistryService registryService;
 
 
   public DeviceRegistryResource() throws ExceptionInInitializerError {
     super();
     registryService = new DeviceRegistryService();
-    log.info(DeviceRegistryResource.class.getSimpleName() + " created");
+    logger.info(DeviceRegistryResource.class.getSimpleName() + " created");
   }
 
   @GET
@@ -51,10 +51,11 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
   @Path(LOOKUP_PATH)
   @Operation(summary = "Searches a DeviceRegistryEntry by id", responses = {
       @ApiResponse(content = @Content(schema = @Schema(implementation = DeviceRegistryEntry.class)))})
-  public Response lookup(@PathParam("id") final long id) throws ArrowheadException {
+  public Response lookup(@PathParam(LOOKUP_ID) final long id) throws ArrowheadException {
     DeviceRegistryEntry returnValue;
     Response response;
 
+    logger.info("Lookup: " + id);
     returnValue = registryService.lookup(id);
     response = Response.status(Status.OK).entity(returnValue).build();
 
@@ -67,6 +68,7 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
     DeviceRegistryEntry returnValue;
     Response response;
 
+    logger.info("publish: " + entry);
     returnValue = registryService.publish(entry);
     response = Response.status(Status.CREATED).entity(returnValue).build();
 
@@ -79,6 +81,7 @@ public class DeviceRegistryResource implements RegistryResource<DeviceRegistryEn
     DeviceRegistryEntry returnValue;
     Response response;
 
+    logger.info("unpublish: " + entry);
     returnValue = registryService.unpublish(entry);
     response = Response.status(Status.OK).entity(returnValue).build();
 

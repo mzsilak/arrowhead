@@ -10,8 +10,8 @@ package eu.arrowhead.common.messages;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import org.hibernate.validator.constraints.NotBlank;
 
 public class Event {
 

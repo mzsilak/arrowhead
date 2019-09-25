@@ -12,8 +12,8 @@ import eu.arrowhead.common.database.ArrowheadSystem;
 import java.util.HashSet;
 import java.util.Set;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class IntraCloudAuthRequest {
 

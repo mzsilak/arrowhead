@@ -21,15 +21,14 @@ import javax.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHENTICATION) //Highest priority constant, this filter gets executed first
 public class SecurityFilter implements ContainerRequestFilter {
 
-  private UriInfo uriInfo;
 
   @Override
   public void filter(ContainerRequestContext context) {
     X509Certificate[] chain = (X509Certificate[]) context.getProperty("javax.servlet.request.X509Certificate");
     if (chain != null && chain.length > 0) {
-      uriInfo = context.getUriInfo();
+      UriInfo uriInfo = context.getUriInfo();
       String subject = chain[0].getSubjectDN().getName();
-      Authorizer securityContext = new Authorizer(subject);
+      Authorizer securityContext = new Authorizer(subject, uriInfo);
       context.setSecurityContext(securityContext);
     }
   }
@@ -38,10 +37,12 @@ public class SecurityFilter implements ContainerRequestFilter {
 
     private String user;
     private Principal principal;
+    private UriInfo uriInfo;
 
-    Authorizer(final String user) {
+    Authorizer(final String user, UriInfo uriInfo) {
       this.user = user;
       this.principal = () -> user;
+      this.uriInfo = uriInfo;
     }
 
     public Principal getUserPrincipal() {
@@ -57,7 +58,7 @@ public class SecurityFilter implements ContainerRequestFilter {
     }
 
     public String getAuthenticationScheme() {
-      return SecurityContext.BASIC_AUTH;
+      return SecurityContext.CLIENT_CERT_AUTH;
     }
   }
 

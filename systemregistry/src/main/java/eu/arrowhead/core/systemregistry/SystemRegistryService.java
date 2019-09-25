@@ -14,6 +14,9 @@ import eu.arrowhead.common.database.SystemRegistryEntry;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.misc.registry_interfaces.RegistryService;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.persistence.EntityNotFoundException;
 import javax.ws.rs.core.Response.Status;
@@ -63,6 +66,25 @@ public class SystemRegistryService implements RegistryService<SystemRegistryEntr
 		final SystemRegistryEntry returnValue;
 
 		try {
+			if(entity.getProvidedSystem().getId() == null)
+			{
+				final Map<String, Object> restrictions = new HashMap<>();
+				ArrowheadSystem system = entity.getProvidedSystem();
+				restrictions.put("systemName", system.getSystemName());
+				restrictions.put("address", system.getAddress());
+				restrictions.put("port", system.getPort());
+
+				List<ArrowheadSystem> systemList = databaseManager.getAll(ArrowheadSystem.class, restrictions);
+
+				for(ArrowheadSystem sys : systemList)
+				{
+					databaseManager.delete(sys);
+				}
+			}
+			else
+			{
+				databaseManager.delete(entity.getProvidedSystem());
+			}
 			databaseManager.delete(entity);
 			returnValue = entity;
 		} catch (final ArrowheadException e) {
@@ -78,7 +100,15 @@ public class SystemRegistryService implements RegistryService<SystemRegistryEntr
 
 		if (providedSystem.getId() != null) {
 			Optional<ArrowheadSystem> optional = databaseManager.get(ArrowheadSystem.class, providedSystem.getId());
-			returnValue = optional.orElseThrow(() -> new ArrowheadException("ProvidedSystem does not exist", Status.BAD_REQUEST.getStatusCode()));
+			if(optional.isPresent())
+			{
+				returnValue = optional.get();
+			}
+			else
+			{
+				returnValue = databaseManager.save(providedSystem);
+			}
+
 		} else {
 			returnValue = databaseManager.save(providedSystem);
 		}
@@ -91,7 +121,14 @@ public class SystemRegistryService implements RegistryService<SystemRegistryEntr
 
 		if (provider.getId() != null) {
 			Optional<ArrowheadDevice> optional = databaseManager.get(ArrowheadDevice.class, provider.getId());
-			returnValue = optional.orElseThrow(() -> new ArrowheadException("Provider does not exist", Status.BAD_REQUEST.getStatusCode()));
+			if(optional.isPresent())
+			{
+				returnValue = optional.get();
+			}
+			else
+			{
+				returnValue = databaseManager.save(provider);
+			}
 		} else {
 			returnValue = databaseManager.save(provider);
 		}

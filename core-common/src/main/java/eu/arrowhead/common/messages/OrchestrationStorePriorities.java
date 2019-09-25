@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import eu.arrowhead.common.exception.BadPayloadException;
 import java.util.HashMap;
 import java.util.Map;
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 
 public class OrchestrationStorePriorities {
 
