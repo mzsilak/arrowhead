@@ -42,14 +42,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path(GatekeeperMain.GATEKEEPER_SERVICE_URI)
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class GatekeeperInboundResource {
 
-  private static final Logger log = Logger.getLogger(GatekeeperInboundResource.class.getName());
+  private static final Logger log = LogManager.getLogger(GatekeeperInboundResource.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
 
   @GET

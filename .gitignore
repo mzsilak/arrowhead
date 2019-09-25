@@ -9,7 +9,9 @@
 
 ### IntelliJ IDEA ###
 .idea/*.xml
+.idea/dataSources
 .idea/libraries
+.idea/markdown-navigator
 *.iws
 *.iml
 *.ipr
@@ -25,6 +27,7 @@
 ### General ###
 /config/
 *.properties
+!log4j2.properties
 */target
 *.txt
 *app.conf

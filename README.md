@@ -1,7 +1,7 @@
 [![Build Status](https://api.travis-ci.com/arrowhead-f/core-java.svg?branch=develop)](https://travis-ci.com/arrowhead-f/core-java)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?colorB=green)](https://github.com/arrowhead-f/core-java/blob/master/LICENSE)
 
-# Arrowhead Framework 4.1
+# Arrowhead Framework 4.1.3
 
 [Arrowhead](http://www.arrowhead.eu/) (and its continuation, [Productive4.0](https://productive40.eu/)) is an ambitious holistic innovation project,
  meant to open the doors to the potentials of Digital Industry and to maintain a leadership position of the industries in Europe. All partners involved will work on creating the capability to efficiently design and integrate hardware and software of Internet of Things (IoT) devices. Linking the real with the digital world takes more than just adding software to the hardware.
@@ -63,12 +63,14 @@ messages from all the core systems in one place.
 * Each core system will log to a file in its active working directory called `log4j_log.txt`. These text files are separate for each core system, 
 meaning one text file only contains the log messages of one core system.
 
-The databases schema(s) have to be created before starting the core systems. The `logs` table also has to be manually created, because that is 
+The databases schema have to be created before starting the core systems. The SQL script at `scripts/create_empty_arrowhead_db.sql` creates a database schema callel `arrowhead`, and also generates all the database tables used by the Core Systems.
+
+The `logs` table also has to be manually created, because that is 
 only used by the logging library, and the ORM library does not know about it. The ORM library can create all the other arrowhead tables, if they do 
 not exist yet. An SQL script can be found at `common/config/create_arrowhead_logs.sql` to create the `logs` table.
 
 The project can also be run from an IDE for testing purposes. Just import the multi-module project as a maven project, and the IDE should find all 
-the `pom.xml` files necessary to download the dependencies and start the core systems.
+the `pom.xml` files necessary to download the dependencies and start the core systems. IntelliJ IDEA specific run configurations (for insecure and secure mode separately) are also provided, including compound configurations, which can start all the core systems together.
 
 ### Ubuntu, Raspbian and other Debian based Linux distriutions
 An alternative method for installing a local Arrowhead Cloud on a

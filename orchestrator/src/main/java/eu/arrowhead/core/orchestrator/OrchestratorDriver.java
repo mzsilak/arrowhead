@@ -40,7 +40,8 @@ import java.util.Set;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Contains miscellaneous helper functions for the Orchestration process. The main functions of the Orchestration process used by the REST resource
@@ -50,7 +51,7 @@ import org.apache.log4j.Logger;
  */
 final class OrchestratorDriver {
 
-  private static final Logger log = Logger.getLogger(OrchestratorService.class.getName());
+  private static final Logger log = LogManager.getLogger(OrchestratorService.class.getName());
 
   private OrchestratorDriver() throws AssertionError {
     throw new AssertionError("OrchestratorDriver is a non-instantiable class");
@@ -84,14 +85,10 @@ final class OrchestratorDriver {
       if (!Utility.isBeanValid(entry)) {
         temp.add(entry);
       }
-      //NOTE this should be done on the SR side I think
-      if (!StoreService.hasMatchingInterfaces(service, entry.getProvidedService())) {
-        temp.add(entry);
-      }
     }
     serviceQueryResult.getServiceQueryData().removeAll(temp);
     if (temp.size() > 0) {
-      log.info(temp.size() + " not valid OR incompatible (0 common service interface) SR entries removed from the response");
+      log.info(temp.size() + " not valid SR entries removed from the response");
     }
     if (!serviceQueryResult.isValid()) {
       log.error("queryServiceRegistry DataNotFoundException");

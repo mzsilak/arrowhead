@@ -1,11 +1,9 @@
 #!/bin/sh
-# postinst script for arrowhead-common
+# postinst script for arrowhead-core-common
 #
 # see: dh_installdeb(1)
 
 set -e
-
-. /usr/share/debconf/confmodule
 
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
@@ -22,6 +20,15 @@ set -e
 
 case "$1" in
     configure)
+      # Create user
+      adduser --system --no-create-home --group arrowhead
+      
+      # Create directories
+      if [ ! -d /var/log/arrowhead ]; then
+          mkdir -p /var/log/arrowhead
+          chown arrowhead:adm /var/log/arrowhead
+          chmod 750 /var/log/arrowhead
+      fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
