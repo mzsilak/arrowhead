@@ -7,12 +7,6 @@
 
 package eu.arrowhead.core.orchestrator;
 
-import eu.arrowhead.common.ArrowheadMain;
-import eu.arrowhead.common.exception.ArrowheadException;
-import eu.arrowhead.common.misc.CoreSystem;
-import eu.arrowhead.common.misc.CoreSystemService;
-import eu.arrowhead.common.misc.GetCoreSystemServicesTask;
-import eu.arrowhead.common.misc.NeedsCoreSystemService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +15,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import eu.arrowhead.common.ArrowheadMain;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.misc.CoreSystem;
+import eu.arrowhead.common.misc.CoreSystemService;
+import eu.arrowhead.common.misc.GetCoreSystemServicesTask;
+import eu.arrowhead.common.misc.NeedsCoreSystemService;
 
 
 public class OrchestratorMain extends ArrowheadMain implements NeedsCoreSystemService {
@@ -49,6 +50,12 @@ public class OrchestratorMain extends ArrowheadMain implements NeedsCoreSystemSe
   @Override
   protected void init(CoreSystem coreSystem, String[] args, Set<Class<?>> classes, String[] packages) {
     super.init(coreSystem, args, classes, packages);
+    for (String s: args) {
+        if (s.equals("-opcua")) {
+			startUaServer("orchestrator");
+            new OrchestratorOpcUa(getArrowheadOpcUaServer());
+        }
+    }
     argLoop:
     for (String arg : args) {
       switch (arg) {

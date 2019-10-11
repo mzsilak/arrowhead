@@ -140,6 +140,17 @@ public class StoreApi {
   }
 
   /**
+   * HTTP POST for addStoreEntries
+   *
+   * @return List<OrchestrationStore>
+   */
+
+  @POST
+  public List<OrchestrationStore> addStoreEntries(@Valid List<OrchestrationStore> storeEntries) {
+    return addStoreEntriesGeneric(storeEntries);
+  }
+  
+  /**
    * Adds a list of Orchestration Store entries to the database. Elements which would throw BadPayloadException are
    * being skipped. The returned list
    * only contains the elements which were saved in the process.
@@ -147,8 +158,7 @@ public class StoreApi {
    * @return List<OrchestrationStore>
    */
 
-  @POST
-  public List<OrchestrationStore> addStoreEntries(@Valid List<OrchestrationStore> storeEntries) {
+  public List<OrchestrationStore> addStoreEntriesGeneric(List<OrchestrationStore> storeEntries) {
     List<OrchestrationStore> store = new ArrayList<>();
     for (OrchestrationStore entry : storeEntries) {
       entry.validateCrossParameterConstraints();

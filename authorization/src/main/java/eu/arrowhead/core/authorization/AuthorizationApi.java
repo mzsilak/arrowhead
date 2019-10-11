@@ -174,6 +174,10 @@ public class AuthorizationApi {
   @POST
   @Path("intracloud")
   public Response addSystemToAuthorized(@Valid IntraCloudAuthEntry entry) {
+	  return addSystemToAuthorizedGeneric(entry);
+  }
+	  
+  public Response addSystemToAuthorizedGeneric(IntraCloudAuthEntry entry) {
     restrictionMap.put("systemName", entry.getConsumer().getSystemName());
     restrictionMap.put("address", entry.getConsumer().getAddress());
     restrictionMap.put("port", entry.getConsumer().getPort());
