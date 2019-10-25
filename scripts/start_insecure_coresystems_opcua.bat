@@ -30,7 +30,7 @@ START "" /B "cmd /c javaw -jar -DarrowheadSystem=gatekeeper arrowhead-gatekeeper
 echo Gatekeeper started
 
 cd ..\..\orchestrator\target
-START "" /B "cmd /c javaw -jar -DarrowheadSystem=orchestrator arrowhead-orchestrator-%version%.jar -d -daemon > insecure_orch.log 2>&1"
+START "" /B "cmd /c javaw -jar -DarrowheadSystem=orchestrator arrowhead-orchestrator-%version%.jar -d -daemon -opcua > insecure_orch.log 2>&1"
 echo Orchestrator started
 
 cd %parent_path%

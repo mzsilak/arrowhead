@@ -1,7 +1,5 @@
 package eu.arrowhead.core.serviceregistry_sql.opcua;
 
-import java.io.IOException;
-
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
@@ -13,18 +11,17 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
-import eu.arrowhead.common.opcua.OpcUaHelper;
+import eu.arrowhead.common.Utility;
+import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
-public class Remove extends AbstractMethodInvocationHandler {
-    public Remove(UaMethodNode node) {
+public class RegisterMethod extends AbstractMethodInvocationHandler {
+    public RegisterMethod(UaMethodNode node) {
         super(node);
     }
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private static final Logger log = LoggerFactory.getLogger(RegisterMethod.class.getName());
 
     public static final Argument SR_ENTRY = new Argument("sr_entry", Identifiers.String, ValueRanks.Scalar, null,
             new LocalizedText("ServiceRegistryEntry"));
@@ -36,23 +33,19 @@ public class Remove extends AbstractMethodInvocationHandler {
 
     @Override
     public Argument[] getOutputArguments() {
-        return null;
+        return new Argument[0];
     }
 
     @Override
     protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
-        logger.debug("Invoking remove() method of Object '{}'", invocationContext.getObjectId());
-        try {
-            new ServiceRegistryResource().removeGeneric(
-                    new OpcUaHelper().sreFromJsonString(inputValues[0].getValue().toString()));
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+		log.debug("Invoking register() method of Object '{}'", invocationContext.getObjectId());
 
-        return new Variant[] { new Variant(null) };
+		try {
+			new ServiceRegistryResource().registerGeneric(Utility.fromJson(inputValues[0].getValue().toString(), ServiceRegistryEntry.class));	
+		} catch (ArrowheadException e) {
+			 log.info("The register process found an exception {} ", e);
+		}
+
+        return new Variant[0];
     }
 }

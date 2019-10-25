@@ -1,9 +1,5 @@
 package eu.arrowhead.core.authorization.opcua;
 
-import java.io.IOException;
-
-import javax.ws.rs.core.Response;
-
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
@@ -15,14 +11,13 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
-import eu.arrowhead.common.opcua.OpcUaHelper;
+import eu.arrowhead.common.Utility;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.messages.IntraCloudAuthEntry;
 import eu.arrowhead.core.authorization.AuthorizationApi;
 
 public class AddSystemToAuthorized extends AbstractMethodInvocationHandler{
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final Logger log = LoggerFactory.getLogger(AddSystemToAuthorized.class.getName());
 
 	public AddSystemToAuthorized(UaMethodNode node) {
 		super(node);
@@ -41,26 +36,19 @@ public class AddSystemToAuthorized extends AbstractMethodInvocationHandler{
 
 	@Override
 	public Argument[] getOutputArguments() {
-		return new Argument[] { ResponseStatus };
+		return new Argument[0];
 	}
 
 	@Override
 	protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
-		Response out = null;
-		logger.debug("Invoking query() method of Object '{}'", invocationContext.getObjectId());
-		try {
-			out = new AuthorizationApi().addSystemToAuthorizedGeneric(
-					new OpcUaHelper().icaeFromJsonString(inputValues[0].getValue().toString()));
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		String res = out.getStatusInfo().getReasonPhrase();
+		log.debug("Invoking mgm/intracloud() method of Object '{}'", invocationContext.getObjectId());
 
-		return new Variant[] { new Variant(res) };
+		try {
+			new AuthorizationApi().addSystemToAuthorizedGeneric(Utility.fromJson(inputValues[0].getValue().toString(), IntraCloudAuthEntry.class));	
+		} catch (ArrowheadException e) {
+			 log.info("The mgm/intracloud process found an exception {} ", e);
+		}
+
+        return new Variant[0];
 	}
 }

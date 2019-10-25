@@ -1,8 +1,7 @@
 package eu.arrowhead.core.serviceregistry_sql.opcua;
 
-import java.io.IOException;
-
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
@@ -15,18 +14,19 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
-import eu.arrowhead.common.database.ServiceRegistryEntry;
+import eu.arrowhead.common.Utility;
+import eu.arrowhead.common.exception.DataNotFoundException;
+import eu.arrowhead.common.json.JacksonJsonProviderAtRest;
+import eu.arrowhead.common.messages.ServiceQueryForm;
 import eu.arrowhead.common.messages.ServiceQueryResult;
-import eu.arrowhead.common.opcua.OpcUaHelper;
 import eu.arrowhead.core.serviceregistry_sql.ServiceRegistryResource;
 
-public class Query extends AbstractMethodInvocationHandler {
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+public class QueryMethod extends AbstractMethodInvocationHandler {
+	private static final Logger log = LoggerFactory.getLogger(QueryMethod.class.getName());
 
-	public Query(UaMethodNode node) {
+	public QueryMethod(UaMethodNode node) {
 		super(node);
 	}
 
@@ -48,24 +48,25 @@ public class Query extends AbstractMethodInvocationHandler {
 
 	@Override
 	protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
-		Response out = null;
-		logger.debug("Invoking query() method of Object '{}'", invocationContext.getObjectId());
+		Response out =  Response.status(Status.OK).entity(new ServiceQueryResult()).build();
+		log.debug("Invoking query() method of Object '{}'", invocationContext.getObjectId());
+
 		try {
-			out = new ServiceRegistryResource().queryGeneric(
-					new OpcUaHelper().sqfFromJsonString(inputValues[0].getValue().toString()));
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		String res = "";
-		for (ServiceRegistryEntry entry : ((ServiceQueryResult) (out.getEntity())).getServiceQueryData()) {
-			res += entry.toString() + " ";
+			out = new ServiceRegistryResource().queryGeneric(Utility.fromJson(inputValues[0].getValue().toString(), ServiceQueryForm.class));	
+		} catch (DataNotFoundException e) {
+			 log.info("The orchestration process didn't find a rule. Originally treated as an exception, but not here, because, well, it's not an exception. ");
 		}
 
-		return new Variant[] { new Variant(res) };
+		try {
+			return new Variant[] { new Variant(JacksonJsonProviderAtRest.getMapper().writeValueAsString(out.getEntity())) };
+		} catch (JsonProcessingException e) {
+			log.error("There was a problem converting the orchestration response into JSON");
+		}
+		
+		return new Variant[] { new Variant("{ \"serviceQueryData\" : []}") };  //default empty response
+		
+		
+		
+		
 	}
 }
