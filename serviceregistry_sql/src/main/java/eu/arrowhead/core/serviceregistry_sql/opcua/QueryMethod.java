@@ -52,7 +52,7 @@ public class QueryMethod extends AbstractMethodInvocationHandler {
 		log.debug("Invoking query() method of Object '{}'", invocationContext.getObjectId());
 
 		try {
-			out = new ServiceRegistryResource().queryGeneric(Utility.fromJson(inputValues[0].getValue().toString(), ServiceQueryForm.class));	
+			out = new ServiceRegistryResource().queryRegistry(Utility.fromJson(inputValues[0].getValue().toString(), ServiceQueryForm.class));	
 		} catch (DataNotFoundException e) {
 			 log.info("The orchestration process didn't find a rule. Originally treated as an exception, but not here, because, well, it's not an exception. ");
 		}

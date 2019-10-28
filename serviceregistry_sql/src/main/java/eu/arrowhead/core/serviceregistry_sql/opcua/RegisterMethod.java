@@ -41,7 +41,7 @@ public class RegisterMethod extends AbstractMethodInvocationHandler {
 		log.debug("Invoking register() method of Object '{}'", invocationContext.getObjectId());
 
 		try {
-			new ServiceRegistryResource().registerGeneric(Utility.fromJson(inputValues[0].getValue().toString(), ServiceRegistryEntry.class));	
+			new ServiceRegistryResource().registerService(Utility.fromJson(inputValues[0].getValue().toString(), ServiceRegistryEntry.class));	
 		} catch (ArrowheadException e) {
 			 log.info("The register process found an exception {} ", e);
 		}

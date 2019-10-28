@@ -49,22 +49,6 @@ public class ServiceRegistryResource {
     @POST
     @Path("register")
     public Response registerService(@Valid ServiceRegistryEntry entry) {
-        return registerGeneric(entry);
-    }
-
-    @PUT
-    @Path("query")
-    public Response queryRegistry(@Valid ServiceQueryForm queryForm) {
-        return queryGeneric(queryForm);
-    }
-
-    @PUT
-    @Path("remove")
-    public Response removeService(@Valid ServiceRegistryEntry entry) {
-        return removeGeneric(entry);
-    }
-
-    public Response registerGeneric(ServiceRegistryEntry entry) {
     	entry.toDatabase();
 
         ArrowheadSystem provider = entry.getProvider();
@@ -115,7 +99,9 @@ public class ServiceRegistryResource {
         return Response.status(Status.CREATED).entity(savedEntry).build();
     }
 
-    public Response queryGeneric(ServiceQueryForm queryForm) {
+    @PUT
+    @Path("query")
+    public Response queryRegistry(@Valid ServiceQueryForm queryForm) {
         restrictionMap.put("serviceDefinition", queryForm.getService().getServiceDefinition());
         ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
         if (service == null) {
@@ -160,8 +146,10 @@ public class ServiceRegistryResource {
         return Response.status(Status.OK).entity(result).build();
     }
 
-    public Response removeGeneric(ServiceRegistryEntry entry) {
-        restrictionMap.clear();
+    @PUT
+    @Path("remove")
+    public Response removeService(@Valid ServiceRegistryEntry entry) {
+    	restrictionMap.clear();
         restrictionMap.put("serviceDefinition", entry.getProvidedService().getServiceDefinition());
         ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
 

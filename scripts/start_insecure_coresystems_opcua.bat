@@ -22,7 +22,7 @@ START "" /B "cmd /c javaw -jar -DarrowheadSystem=gateway arrowhead-gateway-%vers
 echo Gateway started
 
 cd ..\..\eventhandler\target
-START "" /B "cmd /c javaw -jar -DarrowheadSystem=eventhandler arrowhead-eventhandler-%version%.jar -d -daemon > insecure_eventhandler.log 2>&1"
+START "" /B "cmd /c javaw -jar -DarrowheadSystem=eventhandler arrowhead-eventhandler-%version%.jar -d -daemon -opcua > insecure_eventhandler.log 2>&1"
 echo Event Handler started
 
 cd ..\..\gatekeeper\target

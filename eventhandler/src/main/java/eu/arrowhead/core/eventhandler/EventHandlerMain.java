@@ -7,14 +7,15 @@
 
 package eu.arrowhead.core.eventhandler;
 
-import eu.arrowhead.common.ArrowheadMain;
-import eu.arrowhead.common.misc.CoreSystem;
-import eu.arrowhead.common.web.ArrowheadSystemApi;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import eu.arrowhead.common.ArrowheadMain;
+import eu.arrowhead.common.misc.CoreSystem;
+import eu.arrowhead.common.web.ArrowheadSystemApi;
 
 public class EventHandlerMain extends ArrowheadMain {
 
@@ -38,6 +39,13 @@ public class EventHandlerMain extends ArrowheadMain {
       pingTimer.schedule(pingTask, 60L * 1000L, (interval * 60L * 1000L));
     }
 
+    for (String s: args) {
+        if (s.equals("-opcua")) {
+			startUaServer("eventhandler");
+            new EventHandlerOpcUa(getArrowheadOpcUaServer());
+        }
+    }
+    
     listenForInput();
   }
 

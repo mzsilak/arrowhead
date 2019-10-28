@@ -1,6 +1,4 @@
-package eu.arrowhead.core.orchestrator.opcua;
-
-import java.util.Arrays;
+package eu.arrowhead.core.eventhandler.opcua;
 
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler;
@@ -14,23 +12,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.arrowhead.common.Utility;
-import eu.arrowhead.common.database.OrchestrationStore;
+import eu.arrowhead.common.database.EventFilter;
 import eu.arrowhead.common.exception.ArrowheadException;
-import eu.arrowhead.core.orchestrator.api.StoreApi;
+import eu.arrowhead.core.eventhandler.EventHandlerResource;
 
-public class StoreMethod extends AbstractMethodInvocationHandler {
-	private static final Logger logger = LoggerFactory.getLogger(StoreMethod.class.getName());
+public class SusbcribeMethod extends AbstractMethodInvocationHandler {
+	private static final Logger logger = LoggerFactory.getLogger(SusbcribeMethod.class.getName());
 
-	public StoreMethod(UaMethodNode node) {
+	public SusbcribeMethod(UaMethodNode node) {
 		super(node);
 	}
 
-	public static final Argument OrchestrationStoreInput = new Argument("OrchestrationStoreInput", Identifiers.String, ValueRanks.Scalar, null,
+	public static final Argument EventFilter = new Argument("EventFilter", Identifiers.String, ValueRanks.Scalar, null,
 			new LocalizedText("OrchestrationStoreInput"));
 
 	@Override
 	public Argument[] getInputArguments() {
-		return new Argument[] { OrchestrationStoreInput };
+		return new Argument[] { EventFilter };
 	}
 
 	@Override
@@ -40,12 +38,12 @@ public class StoreMethod extends AbstractMethodInvocationHandler {
 
 	@Override
 	protected Variant[] invoke(InvocationContext invocationContext, Variant[] inputValues) throws UaException {
-		logger.debug("Invoking store() method of Object '{}'", invocationContext.getObjectId());
+		logger.debug("Invoking subcribe() method of Object '{}'", invocationContext.getObjectId());
 		
 		try {
-			new StoreApi().addStoreEntries(Arrays.asList(Utility.fromJson(inputValues[0].getValue().toString(), OrchestrationStore[].class)));
+			new EventHandlerResource().subscribe(Utility.fromJson(inputValues[0].getValue().toString(), EventFilter.class));
 		}catch (ArrowheadException e) {
-			logger.debug("Error storing orchestration rule: {}", e);
+			logger.debug("Error subcribing: {}", e);
 		}
 		return new Variant[0];
 	}

@@ -44,7 +44,7 @@ public class AddSystemToAuthorized extends AbstractMethodInvocationHandler{
 		log.debug("Invoking mgm/intracloud() method of Object '{}'", invocationContext.getObjectId());
 
 		try {
-			new AuthorizationApi().addSystemToAuthorizedGeneric(Utility.fromJson(inputValues[0].getValue().toString(), IntraCloudAuthEntry.class));	
+			new AuthorizationApi().addSystemToAuthorized(Utility.fromJson(inputValues[0].getValue().toString(), IntraCloudAuthEntry.class));	
 		} catch (ArrowheadException e) {
 			 log.info("The mgm/intracloud process found an exception {} ", e);
 		}

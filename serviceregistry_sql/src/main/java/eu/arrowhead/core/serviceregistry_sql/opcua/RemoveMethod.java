@@ -41,7 +41,7 @@ public class RemoveMethod extends AbstractMethodInvocationHandler {
 		log.debug("Invoking remove() method of Object '{}'", invocationContext.getObjectId());
 
 		try {
-			new ServiceRegistryResource().removeGeneric(Utility.fromJson(inputValues[0].getValue().toString(), ServiceRegistryEntry.class));	
+			new ServiceRegistryResource().removeService(Utility.fromJson(inputValues[0].getValue().toString(), ServiceRegistryEntry.class));	
 		} catch (ArrowheadException e) {
 			 log.info("The register process found an exception {} ", e);
 		}
