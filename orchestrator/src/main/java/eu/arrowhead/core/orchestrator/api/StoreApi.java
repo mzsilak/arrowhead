@@ -273,6 +273,19 @@ public class StoreApi {
       throw new DataNotFoundException("OrchestrationStore entry not found with id: " + id);
     });
   }
+  
+  /**
+   * Deletes all Orchestration Store entries. Returns always OK
+   */
+  @DELETE
+  @Path("all")
+  public Response deleteAllEntries() {
+	  List<OrchestrationStore> allStore = getAllStoreEntries();
+	  for(OrchestrationStore current : allStore) {
+		  deleteEntry(current.getId().longValue());
+	  }
+	  return Response.ok().build();
+  }
 
   /**
    * Deletes the Orchestration Store entries from the database specified by the consumer. Returns 200 if the delete

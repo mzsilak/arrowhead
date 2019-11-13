@@ -3,7 +3,7 @@
 SET parent_path=%~dp0
 cd %parent_path%
 
-SET time_to_sleep=10
+SET time_to_sleep=20
 SET version=4.1.3-SNAPSHOT
 
 echo Starting Core Systems... Service initializations usually need around 20 seconds.
