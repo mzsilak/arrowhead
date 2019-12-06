@@ -124,7 +124,7 @@ public class PrincipalSubjectData {
     for (SubjectFields field : fields) {
       final String thisValue = this.getSubjectValue(field);
       final String otherValue = other.getSubjectValue(field);
-      retValue &= thisValue.equals(otherValue);
+      retValue &= thisValue.equalsIgnoreCase(otherValue);
     }
 
     return retValue;

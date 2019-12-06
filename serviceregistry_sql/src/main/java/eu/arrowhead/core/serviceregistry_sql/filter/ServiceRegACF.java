@@ -45,11 +45,13 @@ public class ServiceRegACF extends AccessControlFilter {
 
     final String path = requestTarget.getPath();
 
+    /*
     if(path.endsWith("query"))
     {
       verifyMatches(clientSubject, requestTarget, gatekeeper, orchestrator, certificateAuthority, onboardingController);
     }
-    else if(path.endsWith("register") || path.endsWith("remove"))
+    else */
+      if(path.endsWith("register") || path.endsWith("remove"))
     {
       // may only register/remove its own service
       final ServiceRegistryEntry entry = Utility.fromJson(requestJson, ServiceRegistryEntry.class);
