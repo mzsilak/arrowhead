@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
@@ -104,8 +105,7 @@ public final class Utility {
 
     Client client;
     if (context != null) {
-      client =
-          ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid)
+      client = ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid)
                             .build();
     } else {
       client = ClientBuilder.newClient(configuration);
@@ -133,9 +133,8 @@ public final class Utility {
     if (uri == null) {
       log.error("sendRequest received null uri");
       throw new NullPointerException(
-          "send (HTTP) request method received null URL. This most likely means the invoking Core System could not "
-              + "fetch the service"
-              + " of another Core System from the Service Registry!");
+        "send (HTTP) request method received null URL. This most likely means the invoking Core System could not "
+          + "fetch the service" + " of another Core System from the Service Registry!");
     }
     if (uri.startsWith("https")) {
       isSecure = true;
@@ -143,15 +142,14 @@ public final class Utility {
 
     if (isSecure && sslClient == null) {
       throw new AuthException(
-          "SSL Context is not set, but secure request sending was invoked. An insecure module can not send requests "
-              + "to secure modules.",
-          Status.UNAUTHORIZED.getStatusCode());
+        "SSL Context is not set, but secure request sending was invoked. An insecure module can not send requests "
+          + "to secure modules.", Status.UNAUTHORIZED.getStatusCode());
     }
     Client usedClient = isSecure ? givenContext != null ? createClient(givenContext) : sslClient : client;
 
     Builder request = usedClient.target(UriBuilder.fromUri(uri).build()).request()
                                 .header("Content-type", "application/json");
-    Response response; // will not be null after the switch-case
+    Response response = null; // will not be null after the switch-case
     try {
       switch (method) {
         case "GET":
@@ -170,6 +168,9 @@ public final class Utility {
           throw new NotAllowedException("Invalid method type was given to the Utility.sendRequest() method");
       }
     } catch (ProcessingException e) {
+      if (Objects.nonNull(response)) {
+        response.close();
+      }
       if (e.getCause().getMessage().contains("PKIX path")) {
         log.error("The system at " + uri + " is not part of the same certificate chain of trust!");
         throw new AuthException("The system at " + uri + " is not part of the same certificate chain of trust!",
@@ -206,6 +207,7 @@ public final class Utility {
       }
     }
 
+    response.close();
     ErrorMessage errorMessage;
     try {
       errorMessage = response.readEntity(ErrorMessage.class);
@@ -225,8 +227,8 @@ public final class Utility {
       log.info("Request failed, response body: " + errorMessageBody);
       throw new RuntimeException("Unknown error occurred at " + uri + ". Check log for possibly more information.");
     } else {
-      log.error("Request returned with " + errorMessage.getExceptionType().toString() + ": " + errorMessage
-          .getErrorMessage());
+      log.error(
+        "Request returned with " + errorMessage.getExceptionType().toString() + ": " + errorMessage.getErrorMessage());
       switch (errorMessage.getExceptionType()) {
         case ARROWHEAD:
           throw new ArrowheadException(errorMessage.getErrorMessage(), errorMessage.getErrorCode(),
@@ -291,7 +293,7 @@ public final class Utility {
     } catch (URISyntaxException e) {
       if (serverStart) {
         throw new ServiceConfigurationError(
-            url + " is not a valid URL to start a HTTP server! Please fix the address field in the properties file.");
+          url + " is not a valid URL to start a HTTP server! Please fix the address field in the properties file.");
       } else {
         log.error("Bad URL components passed to getUri() method");
         throw new ArrowheadException(url + " is not a valid URL!");
@@ -303,12 +305,11 @@ public final class Utility {
   }
 
   public static Optional<String[]> getServiceInfo(String serviceId) {
-    ArrowheadService service = sslContext == null ? new ArrowheadService(createSD(serviceId, false),
-                                                                         Collections.singleton("HTTP-INSECURE-JSON"),
-                                                                         null)
-                                                  : new ArrowheadService(createSD(serviceId, true),
-                                                                         Collections.singleton("HTTP-SECURE-JSON"),
-                                                                         ArrowheadMain.secureServerMetadata);
+    ArrowheadService service =
+      sslContext == null ? new ArrowheadService(createSD(serviceId, false), Collections.singleton("HTTP-INSECURE-JSON"),
+                                                null)
+                         : new ArrowheadService(createSD(serviceId, true), Collections.singleton("HTTP-SECURE-JSON"),
+                                                ArrowheadMain.secureServerMetadata);
     ServiceQueryForm sqf = new ServiceQueryForm(service, true, false);
     Response response = sendRequest(SR_QUERY_URI, "PUT", sqf);
     ServiceQueryResult result = response.readEntity(ServiceQueryResult.class);
@@ -321,9 +322,9 @@ public final class Utility {
       }
       String serviceURI = getUri(coreSystem.getAddress(), coreSystem.getPort(), entry.getServiceURI(), isSecure, false);
       if (serviceId.equals(CoreSystemService.GW_CONSUMER_SERVICE.getServiceDef()) || serviceId
-          .equals(CoreSystemService.GW_PROVIDER_SERVICE.getServiceDef())) {
+        .equals(CoreSystemService.GW_PROVIDER_SERVICE.getServiceDef())) {
         return Optional.of(new String[]{serviceURI, coreSystem.getSystemName(), coreSystem.getAddress(),
-            coreSystem.getAuthenticationInfo()});
+          coreSystem.getAuthenticationInfo()});
       }
       return Optional.of(new String[]{serviceURI});
     }
@@ -336,8 +337,9 @@ public final class Utility {
     List<String> uriList = new ArrayList<>();
     for (NeighborCloud cloud : cloudList) {
       if (isSecure == cloud.getCloud().isSecure()) {
-        uriList.add(getUri(cloud.getCloud().getAddress(), cloud.getCloud().getPort(),
-                           cloud.getCloud().getGatekeeperServiceURI(), cloud.getCloud().isSecure(), false));
+        uriList.add(
+          getUri(cloud.getCloud().getAddress(), cloud.getCloud().getPort(), cloud.getCloud().getGatekeeperServiceURI(),
+                 cloud.getCloud().isSecure(), false));
       }
     }
 
@@ -349,8 +351,8 @@ public final class Utility {
     if (cloudList.isEmpty()) {
       log.error("Utility:getOwnCloud not found in the database.");
       throw new DataNotFoundException(
-          "Own Cloud information not found in the database. This information is needed for the Gatekeeper System.",
-          Status.NOT_FOUND.getStatusCode());
+        "Own Cloud information not found in the database. This information is needed for the Gatekeeper System.",
+        Status.NOT_FOUND.getStatusCode());
     }
     if (cloudList.size() > 2) {
       log.warn("own_cloud table should NOT have more than 2 rows.");
@@ -393,7 +395,7 @@ public final class Utility {
     } catch (UnsupportedEncodingException e) {
       log.fatal("getRequestPayload ISReader has unsupported charset set!");
       throw new AssertionError(
-          "getRequestPayload InputStreamReader has unsupported character set! Code needs to be changed!", e);
+        "getRequestPayload InputStreamReader has unsupported character set! Code needs to be changed!", e);
     } catch (IOException e) {
       log.error("IOException while reading the request payload");
       throw new RuntimeException("IOException occured while reading an incoming request payload", e);
@@ -424,8 +426,8 @@ public final class Utility {
       }
     } catch (IOException e) {
       throw new ArrowheadException(
-          "Jackson library threw IOException during JSON serialization! Wrapping it in RuntimeException. Exception "
-              + "message: " + e.getMessage(), e);
+        "Jackson library threw IOException during JSON serialization! Wrapping it in RuntimeException. Exception "
+          + "message: " + e.getMessage(), e);
     }
     return null;
   }
@@ -459,8 +461,8 @@ public final class Utility {
       prop.load(inputStream);
     } catch (FileNotFoundException ex) {
       throw new ServiceConfigurationError(
-          fileName + " file not found, make sure you have the correct working directory "
-              + "set! (directory where the config folder can be found)", ex);
+        fileName + " file not found, make sure you have the correct working directory "
+          + "set! (directory where the config folder can be found)", ex);
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -477,7 +479,7 @@ public final class Utility {
         prop.load(new FileInputStream(DEFAULT_CONF_DIR));
       } else {
         throw new ServiceConfigurationError(
-            "default.conf file not found in the working directory! (" + System.getProperty("user.dir") + ")");
+          "default.conf file not found in the working directory! (" + System.getProperty("user.dir") + ")");
       }
 
       if (Files.isReadable(Paths.get(APP_CONF))) {

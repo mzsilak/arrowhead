@@ -113,7 +113,9 @@ public class OnboardingService {
 
   private String getCloudname(final String caUri) {
     Response caResponse = Utility.sendRequest(caUri, "GET", null);
-    return caResponse.readEntity(String.class);
+    String ret = caResponse.readEntity(String.class);
+    caResponse.close();
+    return ret;
   }
 
   private String prepareAndCreateCSR(final String name, final KeyPair keyPair)
@@ -131,7 +133,9 @@ public class OnboardingService {
   private CertificateSigningResponse sendCsr(final CertificateSigningRequest csr) {
     log.info("sending csr to CA (POST)...");
     final Response caResponse = Utility.sendRequest(caBaseUri, "POST", csr);
-    return caResponse.readEntity(CertificateSigningResponse.class);
+    CertificateSigningResponse ret = caResponse.readEntity(CertificateSigningResponse.class);
+    caResponse.close();
+    return ret;
   }
 
   public CertificateSigningResponse signCertificate(final JcaPKCS10CertificationRequest providedCsr)
@@ -297,6 +301,7 @@ public class OnboardingService {
         // verify that there is no HTTP error
         if (response.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
           final ServiceQueryResult lookupResult = response.readEntity(ServiceQueryResult.class);
+          response.close();
 
           // check if the entity is valid and actually found a service
           if (lookupResult.isValid() && !lookupResult.getServiceQueryData().isEmpty()) {
@@ -335,6 +340,7 @@ public class OnboardingService {
           //Parsing the orchestrator response
           OrchestrationResponse orchResponse = postResponse.readEntity(OrchestrationResponse.class);
           log.debug("Orchestration Response payload: " + Utility.toPrettyJson(null, orchResponse));
+          postResponse.close();
 
           if (!orchResponse.getResponse().isEmpty()) {
 

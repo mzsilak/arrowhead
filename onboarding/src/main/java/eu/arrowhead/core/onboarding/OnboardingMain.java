@@ -112,6 +112,7 @@ public class OnboardingMain extends ArrowheadMain {
 
         if (response.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
           lookupResult = response.readEntity(ServiceQueryResult.class);
+          response.close();
           if (lookupResult.isValid() && lookupResult.getServiceQueryData().size() > 0) {
             success = true;
           } else {
