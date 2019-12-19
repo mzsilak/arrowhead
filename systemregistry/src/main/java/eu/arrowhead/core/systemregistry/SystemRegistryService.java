@@ -56,7 +56,7 @@ public class SystemRegistryService implements RegistryService<SystemRegistryEntr
 		} catch (final ArrowheadException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ArrowheadException(e.getMessage(), Status.NOT_FOUND.getStatusCode(), e);
+			throw new ArrowheadException(e.getMessage(), Status.INTERNAL_SERVER_ERROR.getStatusCode(), e);
 		}
 
 		return returnValue;
@@ -85,12 +85,13 @@ public class SystemRegistryService implements RegistryService<SystemRegistryEntr
 			{
 				databaseManager.delete(entity.getProvidedSystem());
 			}
+			entity.setProvidedSystem(null);
 			databaseManager.delete(entity);
 			returnValue = entity;
 		} catch (final ArrowheadException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ArrowheadException(e.getMessage(), Status.NOT_FOUND.getStatusCode(), e);
+			throw new ArrowheadException(e.getMessage(), Status.INTERNAL_SERVER_ERROR.getStatusCode(), e);
 		}
 		return returnValue;
 	}

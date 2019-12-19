@@ -207,16 +207,19 @@ public final class Utility {
       }
     }
 
-    response.close();
     ErrorMessage errorMessage;
     try {
       errorMessage = response.readEntity(ErrorMessage.class);
+
     } catch (RuntimeException e) {
       log.error("Unknown reason for RuntimeException at the sendRequest() method.", e);
       log.info("Request failed, response status code: " + response.getStatus());
       log.info("Request failed, response body: " + errorMessageBody);
       throw new RuntimeException("Unknown error occurred at " + uri + ". Check log for possibly more information.", e);
     }
+
+    response.close();
+
     if (errorMessage == null) {
       log.error("Unknown reason for RuntimeException at the sendRequest() method.");
       log.info("Request failed, response status code: " + response.getStatus());
