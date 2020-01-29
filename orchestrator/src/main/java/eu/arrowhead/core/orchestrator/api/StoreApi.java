@@ -149,69 +149,69 @@ public class StoreApi {
 
   @POST
   public List<OrchestrationStore> addStoreEntries(@Valid List<OrchestrationStore> storeEntries) {
-    List<OrchestrationStore> store = new ArrayList<>();
-    for (OrchestrationStore entry : storeEntries) {
-      entry.validateCrossParameterConstraints();
-      restrictionMap.clear();
-      restrictionMap.put("systemName", entry.getConsumer().getSystemName());
-      restrictionMap.put("address", entry.getConsumer().getAddress());
-      restrictionMap.put("port", entry.getConsumer().getPort());
-      ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
-      if (consumer == null) {
-        consumer = dm.save(entry.getConsumer());
-      }
+	  List<OrchestrationStore> store = new ArrayList<>();
+	    for (OrchestrationStore entry : storeEntries) {
+	      entry.validateCrossParameterConstraints();
+	      restrictionMap.clear();
+	      restrictionMap.put("systemName", entry.getConsumer().getSystemName());
+	      restrictionMap.put("address", entry.getConsumer().getAddress());
+	      restrictionMap.put("port", entry.getConsumer().getPort());
+	      ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+	      if (consumer == null) {
+	        consumer = dm.save(entry.getConsumer());
+	      }
 
-      restrictionMap.clear();
-      restrictionMap.put("serviceDefinition", entry.getService().getServiceDefinition());
-      ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
-      if (service == null) {
-        service = dm.save(entry.getService());
-      }
+	      restrictionMap.clear();
+	      restrictionMap.put("serviceDefinition", entry.getService().getServiceDefinition());
+	      ArrowheadService service = dm.get(ArrowheadService.class, restrictionMap);
+	      if (service == null) {
+	        service = dm.save(entry.getService());
+	      }
 
-      restrictionMap.clear();
-      restrictionMap.put("systemName", entry.getProviderSystem().getSystemName());
-      restrictionMap.put("address", entry.getProviderSystem().getAddress());
-      restrictionMap.put("port", entry.getProviderSystem().getPort());
-      ArrowheadSystem providerSystem = dm.get(ArrowheadSystem.class, restrictionMap);
-      if (providerSystem == null) {
-        providerSystem = dm.save(entry.getProviderSystem());
-      }
+	      restrictionMap.clear();
+	      restrictionMap.put("systemName", entry.getProviderSystem().getSystemName());
+	      restrictionMap.put("address", entry.getProviderSystem().getAddress());
+	      restrictionMap.put("port", entry.getProviderSystem().getPort());
+	      ArrowheadSystem providerSystem = dm.get(ArrowheadSystem.class, restrictionMap);
+	      if (providerSystem == null) {
+	        providerSystem = dm.save(entry.getProviderSystem());
+	      }
 
-      ArrowheadCloud providerCloud = null;
-      if (entry.getProviderCloud() != null) {
-        restrictionMap.clear();
-        restrictionMap.put("operator", entry.getProviderCloud().getOperator());
-        restrictionMap.put("cloudName", entry.getProviderCloud().getCloudName());
-        providerCloud = dm.get(ArrowheadCloud.class, restrictionMap);
-        if (providerCloud == null) {
-          providerCloud = dm.save(entry.getProviderCloud());
-        }
-      }
+	      ArrowheadCloud providerCloud = null;
+	      if (entry.getProviderCloud() != null) {
+	        restrictionMap.clear();
+	        restrictionMap.put("operator", entry.getProviderCloud().getOperator());
+	        restrictionMap.put("cloudName", entry.getProviderCloud().getCloudName());
+	        providerCloud = dm.get(ArrowheadCloud.class, restrictionMap);
+	        if (providerCloud == null) {
+	          providerCloud = dm.save(entry.getProviderCloud());
+	        }
+	      }
 
-      restrictionMap.clear();
-      restrictionMap.put("consumer", consumer);
-      restrictionMap.put("service", service);
-      restrictionMap.put("priority", entry.getPriority());
-      restrictionMap.put("defaultEntry", entry.isDefaultEntry());
-      OrchestrationStore storeEntry = dm.get(OrchestrationStore.class, restrictionMap);
-      if (storeEntry == null) {
-        // Merge the service metadata map to the store attributes map, duplicate keys are handled with concatenated
-        // values
-        entry.getService().getServiceMetadata()
-             .forEach((k, v) -> entry.getAttributes().merge(k, v, (v1, v2) -> String.join(", ", v1, v2)));
-        // Create the new Store Entry with the transactional objects
-        storeEntry = new OrchestrationStore(service, consumer, providerSystem, providerCloud, entry.getPriority(),
-                                            entry.isDefaultEntry(), entry.getName(), LocalDateTime.now(),
-                                            entry.getInstruction(), entry.getAttributes(), null);
-        storeEntry = dm.save(storeEntry);
-        store.add(storeEntry);
-      }
-    }
+	      restrictionMap.clear();
+	      restrictionMap.put("consumer", consumer);
+	      restrictionMap.put("service", service);
+	      restrictionMap.put("priority", entry.getPriority());
+	      restrictionMap.put("defaultEntry", entry.isDefaultEntry());
+	      OrchestrationStore storeEntry = dm.get(OrchestrationStore.class, restrictionMap);
+	      if (storeEntry == null) {
+	        // Merge the service metadata map to the store attributes map, duplicate keys are handled with concatenated
+	        // values
+	        entry.getService().getServiceMetadata()
+	             .forEach((k, v) -> entry.getAttributes().merge(k, v, (v1, v2) -> String.join(", ", v1, v2)));
+	        // Create the new Store Entry with the transactional objects
+	        storeEntry = new OrchestrationStore(service, consumer, providerSystem, providerCloud, entry.getPriority(),
+	                                            entry.isDefaultEntry(), entry.getName(), LocalDateTime.now(),
+	                                            entry.getInstruction(), entry.getAttributes(), null);
+	        storeEntry = dm.save(storeEntry);
+	        store.add(storeEntry);
+	      }
+	    }
 
-    log.info("addStoreEntries successfully returns. List size: " + store.size());
-    return store;
+	    log.info("addStoreEntries successfully returns. List size: " + store.size());
+	    return store;
   }
-
+  
   /**
    * Toggles the <tt>defaultEntry</tt> boolean for the Orchestration Store entry specified by the id field.
    *
@@ -272,6 +272,19 @@ public class StoreApi {
       log.info("deleteStoreEntry had no effect.");
       throw new DataNotFoundException("OrchestrationStore entry not found with id: " + id);
     });
+  }
+  
+  /**
+   * Deletes all Orchestration Store entries. Returns always OK
+   */
+  @DELETE
+  @Path("all")
+  public Response deleteAllEntries() {
+	  List<OrchestrationStore> allStore = getAllStoreEntries();
+	  for(OrchestrationStore current : allStore) {
+		  deleteEntry(current.getId().longValue());
+	  }
+	  return Response.ok().build();
   }
 
   /**
