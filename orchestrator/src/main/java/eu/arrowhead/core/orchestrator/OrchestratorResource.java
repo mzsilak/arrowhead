@@ -21,7 +21,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * REST resource for the Orchestrator Core System.
@@ -31,7 +32,7 @@ import org.apache.log4j.Logger;
 @Produces(MediaType.APPLICATION_JSON)
 public class OrchestratorResource {
 
-  private static final Logger log = Logger.getLogger(OrchestratorResource.class.getName());
+  private static final Logger log = LogManager.getLogger(OrchestratorResource.class.getName());
 
   /**
    * Simple test method to see if the http server where this resource is registered works or not.
@@ -42,7 +43,7 @@ public class OrchestratorResource {
   public String getIt() {
     return "Orchestrator got it!";
   }
-
+  
   /**
    * This method initiates the correct orchestration process determined by orchestration flags in the <tt>ServiceRequestForm</tt>. The returned
    * response (can) consists a list of endpoints where the requester System can consume the requested Service.
@@ -51,42 +52,42 @@ public class OrchestratorResource {
    */
   @POST
   public Response orchestrationProcess(@Valid ServiceRequestForm srf) {
-    srf.validateCrossParameterConstraints();
+	  srf.validateCrossParameterConstraints();
 
-    OrchestrationResponse orchResponse;
-    if (srf.getOrchestrationFlags().getOrDefault("externalServiceRequest", false)) {
-      log.info("Received an externalServiceRequest.");
-      orchResponse = OrchestratorService.externalServiceRequest(srf);
-    } else if (srf.getOrchestrationFlags().getOrDefault("triggerInterCloud", false)) {
-      log.info("Received a triggerInterCloud request.");
-      orchResponse = OrchestratorService.triggerInterCloud(srf);
-    } else if (!srf.getOrchestrationFlags().getOrDefault("overrideStore", false)) { //overrideStore == false
-      log.info("Received an orchestrationFromStore request.");
-      orchResponse = OrchestratorService.orchestrationFromStore(srf);
-    } else {
-      log.info("Received a dynamicOrchestration request.");
-      orchResponse = OrchestratorService.dynamicOrchestration(srf);
-    }
+	    OrchestrationResponse orchResponse;
+	    if (srf.getOrchestrationFlags().getOrDefault("externalServiceRequest", false)) {
+	      log.info("Received an externalServiceRequest.");
+	      orchResponse = OrchestratorService.externalServiceRequest(srf);
+	    } else if (srf.getOrchestrationFlags().getOrDefault("triggerInterCloud", false)) {
+	      log.info("Received a triggerInterCloud request.");
+	      orchResponse = OrchestratorService.triggerInterCloud(srf);
+	    } else if (!srf.getOrchestrationFlags().getOrDefault("overrideStore", false)) { //overrideStore == false
+	      log.info("Received an orchestrationFromStore request.");
+	      orchResponse = OrchestratorService.orchestrationFromStore(srf);
+	    } else {
+	      log.info("Received a dynamicOrchestration request.");
+	      orchResponse = OrchestratorService.dynamicOrchestration(srf);
+	    }
 
-    log.info("The orchestration process returned with " + orchResponse.getResponse().size() + " orchestration forms.");
-    return Response.status(Status.OK).entity(orchResponse).build();
+	    log.info("The orchestration process returned with " + orchResponse.getResponse().size() + " orchestration forms.");
+	    return Response.status(Status.OK).entity(orchResponse).build();
   }
-
+  
   /**
    * Default Store orchestration process offered on a GET request, where the requester only has the consumer system ID.
    */
   @GET
   @Path("{systemId}")
   public Response storeOrchestrationProcess(@PathParam("systemId") long systemId) {
-    ArrowheadSystem requesterSystem = new ArrowheadSystemApi().getSystem(systemId);
-    log.info("Received a GET Store orchestration from: " + requesterSystem.getSystemName());
+	  ArrowheadSystem requesterSystem = new ArrowheadSystemApi().getSystem(systemId);
+	    log.info("Received a GET Store orchestration from: " + requesterSystem.getSystemName());
 
-    ServiceRequestForm srf = new ServiceRequestForm.Builder(requesterSystem).build();
-    srf.validateCrossParameterConstraints();
-    OrchestrationResponse orchResponse = OrchestratorService.orchestrationFromStore(srf);
+	    ServiceRequestForm srf = new ServiceRequestForm.Builder(requesterSystem).build();
+	    srf.validateCrossParameterConstraints();
+	    OrchestrationResponse orchResponse = OrchestratorService.orchestrationFromStore(srf);
 
-    log.info("Default store orchestration returned with " + orchResponse.getResponse().size() + " orchestration forms.");
-    return Response.status(Status.OK).entity(orchResponse).build();
+	    log.info("Default store orchestration returned with " + orchResponse.getResponse().size() + " orchestration forms.");
+	    return Response.status(Status.OK).entity(orchResponse).build();
   }
 
 }

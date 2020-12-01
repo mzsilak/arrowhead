@@ -41,12 +41,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("unused")
 public final class SecurityUtils {
 
-  private static final Logger log = Logger.getLogger(SecurityUtils.class.getName());
+  private static final Logger log = LogManager.getLogger(SecurityUtils.class.getName());
 
   public static KeyStore loadKeyStore(String filePath, String pass) {
     try {
@@ -188,7 +189,7 @@ public final class SecurityUtils {
 
   public static boolean isKeyStoreCNArrowheadValid(String clientCN, String cloudCN) {
     String[] clientFields = clientCN.split("\\.", 2);
-    return cloudCN.equalsIgnoreCase(clientFields[1]);
+    return clientFields.length == 2 && cloudCN.equalsIgnoreCase(clientFields[1]);
   }
 
   public static boolean isTrustStoreCNArrowheadValid(String commonName) {

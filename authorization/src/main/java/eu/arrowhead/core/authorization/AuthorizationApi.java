@@ -36,7 +36,8 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("authorization/mgmt")
 @Produces(MediaType.APPLICATION_JSON)
@@ -44,7 +45,7 @@ import org.apache.log4j.Logger;
 public class AuthorizationApi {
 
   private final HashMap<String, Object> restrictionMap = new HashMap<>();
-  private static final Logger log = Logger.getLogger(AuthorizationApi.class.getName());
+  private static final Logger log = LogManager.getLogger(AuthorizationApi.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
 
   @GET
@@ -173,55 +174,55 @@ public class AuthorizationApi {
   @POST
   @Path("intracloud")
   public Response addSystemToAuthorized(@Valid IntraCloudAuthEntry entry) {
-    restrictionMap.put("systemName", entry.getConsumer().getSystemName());
-    restrictionMap.put("address", entry.getConsumer().getAddress());
-    restrictionMap.put("port", entry.getConsumer().getPort());
-    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
-    if (consumer == null) {
-      log.info("Consumer System " + entry.getConsumer().getSystemName() + " was not in the database, saving it now.");
-      consumer = dm.save(entry.getConsumer());
-    }
+	  restrictionMap.put("systemName", entry.getConsumer().getSystemName());
+	    restrictionMap.put("address", entry.getConsumer().getAddress());
+	    restrictionMap.put("port", entry.getConsumer().getPort());
+	    ArrowheadSystem consumer = dm.get(ArrowheadSystem.class, restrictionMap);
+	    if (consumer == null) {
+	      log.info("Consumer System " + entry.getConsumer().getSystemName() + " was not in the database, saving it now.");
+	      consumer = dm.save(entry.getConsumer());
+	    }
 
-    ArrowheadSystem retrievedSystem;
-    ArrowheadService retrievedService;
-    List<IntraCloudAuthorization> savedAuthRights = new ArrayList<>();
-    for (ArrowheadSystem providerSystem : entry.getProviderList()) {
-      restrictionMap.clear();
-      restrictionMap.put("systemName", providerSystem.getSystemName());
-      restrictionMap.put("address", providerSystem.getAddress());
-      restrictionMap.put("port", providerSystem.getPort());
-      retrievedSystem = dm.get(ArrowheadSystem.class, restrictionMap);
-      if (retrievedSystem == null) {
-        log.info("Provider System " + providerSystem.getSystemName() + " was not in the database, saving it now.");
-        retrievedSystem = dm.save(providerSystem);
-      }
-      for (ArrowheadService service : entry.getServiceList()) {
-        restrictionMap.clear();
-        restrictionMap.put("serviceDefinition", service.getServiceDefinition());
-        retrievedService = dm.get(ArrowheadService.class, restrictionMap);
-        if (retrievedService == null) {
-          log.info("Service " + service.toString() + " was not in the database, saving it now.");
-          retrievedService = dm.save(service);
-        }
-        restrictionMap.clear();
-        restrictionMap.put("consumer", consumer);
-        restrictionMap.put("provider", retrievedSystem);
-        restrictionMap.put("service", retrievedService);
-        IntraCloudAuthorization authRight = dm.get(IntraCloudAuthorization.class, restrictionMap);
-        if (authRight == null) {
-          authRight = dm.save(new IntraCloudAuthorization(consumer, retrievedSystem, retrievedService));
-          savedAuthRights.add(authRight);
-        }
-      }
-    }
+	    ArrowheadSystem retrievedSystem;
+	    ArrowheadService retrievedService;
+	    List<IntraCloudAuthorization> savedAuthRights = new ArrayList<>();
+	    for (ArrowheadSystem providerSystem : entry.getProviderList()) {
+	      restrictionMap.clear();
+	      restrictionMap.put("systemName", providerSystem.getSystemName());
+	      restrictionMap.put("address", providerSystem.getAddress());
+	      restrictionMap.put("port", providerSystem.getPort());
+	      retrievedSystem = dm.get(ArrowheadSystem.class, restrictionMap);
+	      if (retrievedSystem == null) {
+	        log.info("Provider System " + providerSystem.getSystemName() + " was not in the database, saving it now.");
+	        retrievedSystem = dm.save(providerSystem);
+	      }
+	      for (ArrowheadService service : entry.getServiceList()) {
+	        restrictionMap.clear();
+	        restrictionMap.put("serviceDefinition", service.getServiceDefinition());
+	        retrievedService = dm.get(ArrowheadService.class, restrictionMap);
+	        if (retrievedService == null) {
+	          log.info("Service " + service.toString() + " was not in the database, saving it now.");
+	          retrievedService = dm.save(service);
+	        }
+	        restrictionMap.clear();
+	        restrictionMap.put("consumer", consumer);
+	        restrictionMap.put("provider", retrievedSystem);
+	        restrictionMap.put("service", retrievedService);
+	        IntraCloudAuthorization authRight = dm.get(IntraCloudAuthorization.class, restrictionMap);
+	        if (authRight == null) {
+	          authRight = dm.save(new IntraCloudAuthorization(consumer, retrievedSystem, retrievedService));
+	          savedAuthRights.add(authRight);
+	        }
+	      }
+	    }
 
-    log.info("addSystemToAuthorized: " + savedAuthRights.size() + " authorization rights created.");
-    GenericEntity<List<IntraCloudAuthorization>> entity = new GenericEntity<List<IntraCloudAuthorization>>(
-        savedAuthRights) {
-    };
-    return Response.status(Status.CREATED).entity(entity).build();
+	    log.info("addSystemToAuthorized: " + savedAuthRights.size() + " authorization rights created.");
+	    GenericEntity<List<IntraCloudAuthorization>> entity = new GenericEntity<List<IntraCloudAuthorization>>(
+	        savedAuthRights) {
+	    };
+	    return Response.status(Status.CREATED).entity(entity).build();
   }
-
+	  
   @PUT
   @Path("intracloud")
   public Response updateIntraEntry(@Valid IntraCloudAuthorization updatedEntry) {

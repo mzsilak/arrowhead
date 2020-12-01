@@ -68,7 +68,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.Response.Status.Family;
 import javax.ws.rs.core.UriBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 
@@ -78,9 +79,10 @@ public final class Utility {
   private static Client sslClient;
   private static SSLContext sslContext;
   private static String SR_QUERY_URI;
+  private static boolean secure = false;
 
   private static final ObjectMapper mapper = JacksonJsonProviderAtRest.getMapper();
-  private static final Logger log = Logger.getLogger(Utility.class.getName());
+  private static final Logger log = LogManager.getLogger(Utility.class.getName());
   private static final HostnameVerifier allHostsValid = (hostname, session) -> {
     // Decide whether to allow the connection...
     return true;
@@ -102,7 +104,8 @@ public final class Utility {
 
     Client client;
     if (context != null) {
-      client = ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid)
+      client =
+          ClientBuilder.newBuilder().sslContext(context).withConfig(configuration).hostnameVerifier(allHostsValid)
                             .build();
     } else {
       client = ClientBuilder.newClient(configuration);
@@ -561,6 +564,14 @@ public final class Utility {
     Validator validator = factory.getValidator();
     Set<ConstraintViolation<T>> violations = validator.validate(bean);
     return violations.isEmpty();
+  }
+
+  public static boolean isSecure() {
+    return secure;
+  }
+
+  public static void setSecure(boolean secure) {
+    Utility.secure = secure;
   }
 
   @SuppressWarnings("WeakerAccess")

@@ -12,7 +12,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 
@@ -24,7 +25,7 @@ public class ArrowheadExceptionMapper implements ExceptionMapper<ArrowheadExcept
   @Inject
   private javax.inject.Provider<ContainerResponse> responseContext;
 
-  private static final Logger log = Logger.getLogger(ArrowheadExceptionMapper.class.getName());
+  private static final Logger log = LogManager.getLogger(ArrowheadExceptionMapper.class.getName());
 
   @Override
   public Response toResponse(ArrowheadException ex) {

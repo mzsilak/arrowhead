@@ -5,6 +5,6 @@ Priority: optional
 Architecture: all
 Maintainer: Thomas Pedersen <tp@cs.aau.dk>
 Homepage: http://www.arrowhead.eu
-Description: Arrowhead Common
+Description: Arrowhead Core Common
 Distribution: development
-Depends: java-runtime-headless, openssl, debconf
+Depends: java-runtime-headless, openssl, debconf, arrowhead-common

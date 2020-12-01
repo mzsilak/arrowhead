@@ -1,0 +1,15 @@
+[Unit]
+Description=arrowhead-onboarding
+After=network.target mysql.target arrowhead-serviceregistry-sql.service arrowhead-certificate-authority.service
+Requires=arrowhead-serviceregistry-sql.service arrowhead-authorization.service arrowhead-certificate-authority.service
+
+[Service]
+WorkingDirectory=/etc/arrowhead/systems/onboarding
+ExecStart=/usr/bin/java -jar /usr/share/arrowhead/arrowhead-onboarding-4.1.1-SNAPSHOT.jar -d -daemon -tls
+TimeoutStopSec=5
+Type=simple
+User=arrowhead
+Group=arrowhead
+
+[Install]
+WantedBy=default.target

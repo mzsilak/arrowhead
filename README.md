@@ -117,3 +117,47 @@ This should reply “Orchestrator got it!”
 Each core system offers [Swagger UI](https://swagger.io/tools/swagger-ui/) to discover its REST interfaces. This UI is available at the `/api/` 
 root path. So for example the REST interfaces of the Service Registry is available at http://localhost:8442/api/ by default. In insecure mode, all 
 the requests can be tested by clicking on the "Try it out" button.
+
+### OPC UA Interfaces
+
+The OPC UA interfaces allow to use an OPC UA interface for the Service Registry, Orchestration and EventHandler from the Arrowhead Framework. Also the Authorization is enabled with OPC UA just for adding new rules.
+The following OPC UA servers and methods are available: 
+* Service Registry: opc.tcp://localhost:62551/serviceregistry
+  * /Objects/ServiceRegistry/register
+  * /Objects/ServiceRegistry/remove
+  * /Objects/ServiceRegistry/query
+* Orchestrator: opc.tcp://localhost:62548/orchestrator
+  * /Objects/Orchestrator/orchestration
+  * /Objects/Orchestrator/store (*)
+* EventHandler: opc.tcp://localhost:62544/eventhandler
+  * /Objects/EventHandler/publish
+  * /Objects/EventHandler/subscribe
+  * /Objects/EventHandler/unsubscribe
+* Authorization: opc.tcp://localhost:62541/authorization
+  * /Objects/Authorization/addSystemToAuthorized (*)
+  
+The input and output parameters for these methods are JSON strings according to the SD. So for example the "register" method of the Service Registry receives a ServiceRegistryEntry as JSON string as input and it has no output. The methods marked with an asterisk are not defined in any SD, but their interface is taken from the HTTP implementation and help manage orchestration rules.
+
+This implementation allows a producer or consumer to use exclusively OPC UA and not HTTP to connect to the Arrowhead Framework. An special case is the EventHandler. The publish method allows to publish a method by telling the EventHandler core system to do it, but it will still use HTTP to send the actual message, meaning that any subscriber should implement HTTP. 
+
+To start the core system with OPC UA, use the "start_insecure_coresystems_opcua.{bat|sh}" script. The OPC UA interface is started in paralallel meaning that the HTTP one is still there and can be used as always. 
+
+#### OPC UA For developers
+
+To extend this work, here are some details about the code:
+ * OPC UA milo 0.3.3 is used
+ * In the core-common project, the base for the OPC UA server and the namespace is implemented and for further implementations, these files are (most probably) not the place to change
+ * For the server of each core system, there's a file called {CORE_SYSTEM}OpcUa.java which just creates the OPC UA server and adds the folders and methods nodes
+ * In the main function of each core systems there's a check for a "-opcua" flag that will start the OPC UA server
+ * The methods for each core systems are in their own packages with a class for each method which defines the input and output arguments as strings, and overrides the "invoke" function which is the one called when the method is called in the OPC UA server. The invoke function just calls the API of the core system (for example, for registering a service, the registerService() which receives a ServiceRegistryEntry transformed from the JSON string)
+ * The OPC UA server for the other core systems are not implemented, but in the file common/misc/CoreSystem.java the port for each of them is prepared and they are as follow:
+   * CertificateAuthority: 62542
+   * Choreographer: 62543
+   * GatekeeperInternal: 62545
+   * GatekeeperExternal: 62546
+   * Gateway: 62547
+   * QoS: 62549
+   * ServiceRegistryDNS: 62550
+   * SystemRegistry: 62552
+   * DeviceRegistry: 62553
+   * Onboarding: 62554

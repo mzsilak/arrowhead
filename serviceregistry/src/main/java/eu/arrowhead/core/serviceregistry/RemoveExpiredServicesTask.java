@@ -20,11 +20,12 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TimerTask;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class RemoveExpiredServicesTask extends TimerTask {
 
-  private static final Logger log = Logger.getLogger(RemoveExpiredServicesTask.class.getName());
+  private static final Logger log = LogManager.getLogger(RemoveExpiredServicesTask.class.getName());
 
   RemoveExpiredServicesTask() {
   }

@@ -26,7 +26,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Path("mgmt/systems")
 @Produces(MediaType.APPLICATION_JSON)
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
 public class ArrowheadSystemApi {
 
   private final HashMap<String, Object> restrictionMap = new HashMap<>();
-  private static final Logger log = Logger.getLogger(ArrowheadSystemApi.class.getName());
+  private static final Logger log = LogManager.getLogger(ArrowheadSystemApi.class.getName());
   private static final DatabaseManager dm = DatabaseManager.getInstance();
 
   @GET
